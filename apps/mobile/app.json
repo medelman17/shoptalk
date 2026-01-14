@@ -34,13 +34,7 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store",
-      [
-        "expo-linking",
-        {
-          "origin": "https://shoptalk.app"
-        }
-      ]
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true
