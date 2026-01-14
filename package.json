@@ -9,6 +9,8 @@
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
+    "ios": "pnpm --filter @shoptalk/mobile ios",
+    "android": "pnpm --filter @shoptalk/mobile android",
     "lint": "turbo lint",
     "type-check": "turbo type-check",
     "clean": "turbo clean && rm -rf node_modules",
@@ -23,5 +25,8 @@
   "packageManager": "pnpm@9.15.0",
   "engines": {
     "node": ">=20"
+  },
+  "volta": {
+    "node": "20.20.0"
   }
 }

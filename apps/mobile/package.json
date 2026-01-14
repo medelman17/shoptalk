@@ -36,6 +36,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.28.6",
+    "@expo/metro-runtime": "~6.1.2",
     "@types/node": "^25.0.8",
     "@types/react": "~19.1.17",
     "typescript": "^5.9.3"
