@@ -1,7 +1,7 @@
 import "dotenv/config";
 import fs from "fs";
 import path from "path";
-import pdf from "pdf-parse";
+import { PDFParse } from "pdf-parse";
 import { Pinecone } from "@pinecone-database/pinecone";
 import OpenAI from "openai";
 import { encoding_for_model } from "tiktoken";
@@ -205,13 +205,19 @@ export async function ingestPdf(config: DocumentConfig): Promise<void> {
   }
 
   const dataBuffer = fs.readFileSync(filePath);
-  const pdfData = await pdf(dataBuffer);
+  const parser = new PDFParse({ data: dataBuffer });
+  const textResult = await parser.getText();
+  const infoResult = await parser.getInfo();
+  await parser.destroy();
 
-  console.log(`  Pages: ${pdfData.numpages}`);
-  console.log(`  Characters: ${pdfData.text.length}`);
+  const pageCount = infoResult.pages?.length ?? textResult.pages.length;
+  const fullText = textResult.text;
+
+  console.log(`  Pages: ${pageCount}`);
+  console.log(`  Characters: ${fullText.length}`);
 
   // Split into chunks
-  const chunks = splitIntoChunks(pdfData.text, config);
+  const chunks = splitIntoChunks(fullText, config);
   console.log(`  Chunks: ${chunks.length}`);
 
   // Generate embeddings

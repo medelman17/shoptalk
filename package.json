@@ -17,8 +17,8 @@
     "db:studio": "pnpm --filter @shoptalk/db studio"
   },
   "devDependencies": {
-    "turbo": "^2.3.0",
-    "typescript": "^5.7.2"
+    "turbo": "^2.7.4",
+    "typescript": "^5.9.3"
   },
   "packageManager": "pnpm@9.15.0",
   "engines": {

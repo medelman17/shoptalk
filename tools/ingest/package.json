@@ -10,19 +10,19 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^0.10.4",
-    "@pinecone-database/pinecone": "^4.0.0",
+    "@neondatabase/serverless": "^1.0.2",
+    "@pinecone-database/pinecone": "^6.1.3",
     "@shoptalk/db": "workspace:*",
-    "dotenv": "^16.4.7",
-    "drizzle-orm": "^0.38.3",
-    "openai": "^4.76.2",
-    "pdf-parse": "^1.1.1",
-    "tiktoken": "^1.0.18"
+    "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.45.1",
+    "openai": "^6.16.0",
+    "pdf-parse": "^2.4.5",
+    "tiktoken": "^1.0.22"
   },
   "devDependencies": {
-    "@types/node": "^22.10.2",
-    "@types/pdf-parse": "^1.1.4",
-    "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "@types/node": "^25.0.8",
+    "@types/pdf-parse": "^1.1.5",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }
