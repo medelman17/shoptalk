@@ -28,5 +28,10 @@
   },
   "volta": {
     "node": "20.20.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "@expo/metro-runtime": "~6.1.2"
+    }
   }
 }
