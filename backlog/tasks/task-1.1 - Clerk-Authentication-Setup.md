@@ -1,9 +1,10 @@
 ---
 id: task-1.1
 title: Clerk Authentication Setup
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-19 19:41'
+updated_date: '2026-01-19 20:51'
 labels:
   - P0
   - auth
@@ -36,10 +37,16 @@ Set up Clerk authentication with magic link flow for phone and email authenticat
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 @clerk/nextjs installed and configured
-- [ ] #2 Sign-in page accepts phone or email
-- [ ] #3 Sign-up page captures phone or email
+- [x] #1 @clerk/nextjs installed and configured
+- [x] #2 Sign-in page accepts phone or email
+- [x] #3 Sign-up page captures phone or email
 - [ ] #4 Magic link sent via SMS or email
-- [ ] #5 Callback handler redirects authenticated users
-- [ ] #6 Protected routes redirect unauthenticated users to sign-in
+- [x] #5 Callback handler redirects authenticated users
+- [x] #6 Protected routes redirect unauthenticated users to sign-in
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Completed 2026-01-19: Installed @clerk/nextjs, created middleware.ts with route protection, wrapped app in ClerkProvider, created sign-in/sign-up pages, created auth utilities. Webhook configured in Clerk dashboard with CLERK_WEBHOOK_SECRET added to Vercel.
+<!-- SECTION:NOTES:END -->

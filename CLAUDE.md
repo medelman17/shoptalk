@@ -1,12 +1,13 @@
 # ShopTalk - AI-Powered Contract Retrieval
 
 ## Quick Context
-Next.js 16 app with Mastra AI framework for building conversational agents. Uses Claude AI via Anthropic API.
+Next.js 16 app with Mastra AI framework for building conversational agents. Uses Claude AI via Anthropic API, Clerk for authentication, and Supabase for database.
 
 ## Critical Rules
 - Never use mock data as a workaround (use real API calls or proper error states)
 - Always use `@/*` path aliases for imports (not relative paths)
 - Use Server Components by default; add `"use client"` only when needed
+- Database changes must go through migrations (never modify schema directly)
 
 ## Code Conventions
 
@@ -23,6 +24,18 @@ Next.js 16 app with Mastra AI framework for building conversational agents. Uses
 - Always use Zod schemas for tool inputs/outputs
 - Prefer streaming responses for user-facing agent output
 
+### Authentication (Clerk)
+- Auth utilities in `src/lib/auth.ts`
+- Route protection via `src/middleware.ts`
+- Auth pages in `src/app/(auth)/`
+- Webhook handler at `/api/webhooks/clerk`
+
+### Database (Supabase)
+- Supabase clients in `src/lib/supabase/` (client.ts, server.ts, admin.ts)
+- Data access layer in `src/lib/db/`
+- Types in `src/lib/supabase/types.ts`
+- Migrations in `supabase/migrations/`
+
 ### Styling
 - Tailwind CSS v4 with CSS variables for theming
 - Dark mode uses CSS custom properties (--background, --foreground, etc.)
@@ -32,25 +45,73 @@ Next.js 16 app with Mastra AI framework for building conversational agents. Uses
 
 ```
 src/
-├── app/           # Next.js routes (App Router)
+├── app/              # Next.js routes (App Router)
+│   ├── (auth)/       # Auth pages (sign-in, sign-up)
+│   └── api/webhooks/ # Webhook handlers
 ├── components/
-│   ├── ui/        # Reusable UI primitives
+│   ├── ui/           # Reusable UI primitives
 │   └── ai-elements/  # AI output visualizations
-├── lib/           # Utilities and helpers
-└── mastra/        # AI agents, tools, workflows
+├── lib/
+│   ├── auth.ts       # Auth utilities
+│   ├── supabase/     # Supabase clients
+│   └── db/           # Data access layer
+├── mastra/           # AI agents, tools, workflows
+└── middleware.ts     # Route protection
+supabase/
+├── migrations/       # Database migrations
+└── seed.sql          # Test data for local dev
 ```
 
 ## Commands
 ```bash
-pnpm dev          # Start dev server
-pnpm build        # Production build
-pnpm lint         # Run ESLint
+pnpm dev              # Start dev server
+pnpm build            # Production build
+pnpm lint             # Run ESLint
+pnpm type-check       # Run TypeScript checks
+
+# Database (Supabase CLI)
+pnpm db:migrate <name>  # Create new migration
+pnpm db:push            # Push migrations to remote
+pnpm db:pull            # Pull remote schema changes
+pnpm db:reset           # Reset local DB (requires Docker)
+pnpm db:status          # List migration status
+pnpm db:generate-types  # Generate TypeScript types from schema
 ```
 
 ## Environment Variables
 ```
-ANTHROPIC_API_KEY  # Required for Claude AI
+# AI
+ANTHROPIC_API_KEY           # Required for Claude AI
+
+# Clerk Authentication
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+CLERK_SECRET_KEY
+CLERK_WEBHOOK_SECRET        # For /api/webhooks/clerk
+
+# Supabase Database
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY   # Server-side only, bypasses RLS
 ```
+
+## Database Migrations
+
+Always use migrations for schema changes:
+
+```bash
+# 1. Create a new migration
+pnpm db:migrate add_new_table
+
+# 2. Edit the file in supabase/migrations/
+
+# 3. Push to remote database
+pnpm db:push
+
+# 4. Regenerate TypeScript types
+SUPABASE_PROJECT_ID=xxx pnpm db:generate-types
+```
+
+See `docs/DATABASE.md` for schema documentation.
 
 ## Testing
 No test framework configured yet. When adding tests:
