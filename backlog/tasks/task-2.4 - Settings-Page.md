@@ -1,9 +1,10 @@
 ---
 id: task-2.4
 title: Settings Page
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-19 19:41'
+updated_date: '2026-01-19 23:50'
 labels:
   - P0
   - onboarding
@@ -44,10 +45,10 @@ Build settings page for viewing and editing user profile information.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Settings page displays current Local and classification
-- [ ] #2 Settings page lists applicable documents
-- [ ] #3 User can edit Local without re-auth
-- [ ] #4 User can edit classification without re-auth
-- [ ] #5 Profile changes update supplement scope
-- [ ] #6 Incomplete profiles redirect to onboarding
+- [x] #1 Settings page displays current Local and classification
+- [x] #2 Settings page lists applicable documents
+- [x] #3 User can edit Local without re-auth
+- [x] #4 User can edit classification without re-auth
+- [x] #5 Profile changes update supplement scope
+- [x] #6 Incomplete profiles redirect to onboarding
 <!-- AC:END -->

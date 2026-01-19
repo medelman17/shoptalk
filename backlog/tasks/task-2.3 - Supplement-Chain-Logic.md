@@ -1,9 +1,10 @@
 ---
 id: task-2.3
 title: Supplement Chain Logic
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-19 19:41'
+updated_date: '2026-01-19 23:50'
 labels:
   - P0
   - onboarding
@@ -50,8 +51,8 @@ interface SupplementMapping {
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Local-to-supplement mapping covers all MVP Locals
-- [ ] #2 Function returns correct supplements for any Local
-- [ ] #3 Confirmation screen shows all applicable documents
-- [ ] #4 Supplement IDs stored in user profile for query filtering
+- [x] #1 Local-to-supplement mapping covers all MVP Locals
+- [x] #2 Function returns correct supplements for any Local
+- [x] #3 Confirmation screen shows all applicable documents
+- [x] #4 Supplement IDs stored in user profile for query filtering
 <!-- AC:END -->

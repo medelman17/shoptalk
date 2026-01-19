@@ -1,9 +1,10 @@
 ---
 id: task-2.2
 title: Job Classification Selector Component
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-19 19:41'
+updated_date: '2026-01-19 23:50'
 labels:
   - P0
   - onboarding
@@ -43,8 +44,8 @@ Build a selector for UPS job classifications that determine applicable contract 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 All standard classifications displayed
-- [ ] #2 Other option allows freeform input
-- [ ] #3 Selected classification persists to profile
-- [ ] #4 Classification names are user-friendly (not abbreviations only)
+- [x] #1 All standard classifications displayed
+- [x] #2 Other option allows freeform input
+- [x] #3 Selected classification persists to profile
+- [x] #4 Classification names are user-friendly (not abbreviations only)
 <!-- AC:END -->

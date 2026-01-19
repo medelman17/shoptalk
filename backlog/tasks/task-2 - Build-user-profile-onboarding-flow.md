@@ -1,9 +1,10 @@
 ---
 id: task-2
 title: Build user profile onboarding flow
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-19 19:41'
+updated_date: '2026-01-19 23:50'
 labels:
   - P0
   - onboarding
@@ -34,10 +35,10 @@ Union members need to be associated with their specific Local union and job clas
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 User selects Local from searchable list
-- [ ] #2 Local name displayed after selection
-- [ ] #3 User selects job classification
-- [ ] #4 System shows which documents apply to user
-- [ ] #5 User can modify profile without re-authentication
-- [ ] #6 Incomplete profiles redirect to onboarding
+- [x] #1 User selects Local from searchable list
+- [x] #2 Local name displayed after selection
+- [x] #3 User selects job classification
+- [x] #4 System shows which documents apply to user
+- [x] #5 User can modify profile without re-authentication
+- [x] #6 Incomplete profiles redirect to onboarding
 <!-- AC:END -->

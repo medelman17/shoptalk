@@ -1,9 +1,10 @@
 ---
 id: task-2.1
 title: Local Union Selector Component
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-19 19:41'
+updated_date: '2026-01-19 23:50'
 labels:
   - P0
   - onboarding
@@ -50,9 +51,9 @@ interface LocalUnion {
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Searchable dropdown displays all ~200 Locals
-- [ ] #2 Search works by Local number
-- [ ] #3 Search works by city or state name
-- [ ] #4 Selected Local shows number and name
-- [ ] #5 Selection persists to user profile
+- [x] #1 Searchable dropdown displays all ~200 Locals
+- [x] #2 Search works by Local number
+- [x] #3 Search works by city or state name
+- [x] #4 Selected Local shows number and name
+- [x] #5 Selection persists to user profile
 <!-- AC:END -->

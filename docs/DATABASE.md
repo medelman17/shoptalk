@@ -36,6 +36,7 @@ CREATE TABLE user_profiles (
   local_number TEXT,
   classification TEXT,
   supplement_ids TEXT[] DEFAULT '{}',
+  onboarding_completed_at TIMESTAMPTZ DEFAULT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -113,9 +114,10 @@ CREATE POLICY "Users can delete own queries"
 | `id` | UUID | Internal primary key |
 | `clerk_id` | TEXT | Clerk user ID (unique, used for auth lookup) |
 | `email` | TEXT | User's primary email from Clerk |
-| `local_number` | TEXT | Union local number (e.g., "804") |
-| `classification` | TEXT | Job classification (e.g., "Package Handler") |
-| `supplement_ids` | TEXT[] | Array of supplement document IDs user has access to |
+| `local_number` | TEXT | Union local number (e.g., "396") |
+| `classification` | TEXT | Job classification (e.g., "rpcd", "feeder", "pt-hub") |
+| `supplement_ids` | TEXT[] | Array of supplement document IDs (e.g., `["master", "western", "southwest-package"]`) |
+| `onboarding_completed_at` | TIMESTAMPTZ | When user completed onboarding (NULL if incomplete) |
 | `created_at` | TIMESTAMPTZ | When profile was created |
 | `updated_at` | TIMESTAMPTZ | When profile was last updated |
 
@@ -186,5 +188,48 @@ SUPABASE_PROJECT_ID=<your-project-id> pnpm db:generate-types
 
 ```
 supabase/migrations/
-└── 20260119203957_initial_schema.sql  # user_profiles, queries tables + RLS
+├── 20260119203957_initial_schema.sql           # user_profiles, queries tables + RLS
+└── 20260119210000_add_onboarding_completed_at.sql  # Add onboarding timestamp column
 ```
+
+## Classification Values
+
+Valid job classification values stored in `user_profiles.classification`:
+
+| Value | Display Name |
+|-------|--------------|
+| `rpcd` | Package Car Driver (RPCD) |
+| `feeder` | Feeder Driver |
+| `pt-hub` | Part-Time Hub/Sort |
+| `22.3` | 22.3 Combination |
+| `22.4` | 22.4 Driver |
+| `air` | Air Driver |
+| `automotive` | Automotive/Mechanic |
+| `clerical` | Clerical |
+| `other: <description>` | Other (with user-provided description) |
+
+## Supplement IDs
+
+The `supplement_ids` array contains document identifiers based on the user's Local union:
+
+| ID | Document |
+|----|----------|
+| `master` | National Master UPS Agreement |
+| `western` | Western Region Supplement |
+| `central` | Central Region Supplement |
+| `southern` | Southern Region Supplement |
+| `atlantic` | Atlantic Area Supplement |
+| `eastern` | Eastern Region Supplement |
+| `local-804` | Local 804 Agreement (standalone) |
+| `local-705` | Local 705 Agreement (standalone) |
+| `local-710` | Local 710 Agreement (standalone) |
+| `southwest-package` | Southwest Package Rider |
+| `northern-california` | Northern California Rider |
+| `southern-california` | Southern California Rider |
+| `new-england` | New England Rider |
+| `upstate-ny` | Upstate New York Rider |
+| `texas` | Texas Rider |
+| `ohio-valley` | Ohio Valley Rider |
+| `michigan-indiana` | Michigan-Indiana Rider |
+
+The mapping from Local number to supplement IDs is handled by `src/lib/union/mapping.ts`.
