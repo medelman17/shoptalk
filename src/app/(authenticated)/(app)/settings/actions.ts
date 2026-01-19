@@ -63,30 +63,22 @@ export async function updateSettings(
     };
   }
 
+  // Calculate supplement IDs from Local number
+  const supplementIds = getSupplementIds(parseInt(localNumber, 10));
+
+  // Build classification value (include "other" description if applicable)
+  const classificationValue =
+    classification === "other" && classificationOther
+      ? `other: ${classificationOther.trim()}`
+      : classification;
+
   try {
-    // Calculate supplement IDs from Local number
-    const supplementIds = getSupplementIds(parseInt(localNumber, 10));
-
-    // Build classification value (include "other" description if applicable)
-    const classificationValue =
-      classification === "other" && classificationOther
-        ? `other: ${classificationOther.trim()}`
-        : classification;
-
     // Update profile
     await updateUserProfile(clerkId, {
       local_number: localNumber,
       classification: classificationValue,
       supplement_ids: supplementIds,
     });
-
-    // Revalidate the settings page to show updated data
-    revalidatePath("/settings");
-
-    return {
-      success: true,
-      message: "Your profile has been updated.",
-    };
   } catch (error) {
     console.error("Settings update error:", error);
     return {
@@ -96,4 +88,12 @@ export async function updateSettings(
       },
     };
   }
+
+  // Revalidate the settings page (must be outside try/catch - revalidatePath throws)
+  revalidatePath("/settings");
+
+  return {
+    success: true,
+    message: "Your profile has been updated.",
+  };
 }

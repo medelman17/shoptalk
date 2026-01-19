@@ -61,25 +61,22 @@ export async function submitOnboarding(
     };
   }
 
+  // Calculate supplement IDs from Local number
+  const supplementIds = getSupplementIds(parseInt(localNumber, 10));
+
+  // Build classification value (include "other" description if applicable)
+  const classificationValue =
+    classification === "other" && classificationOther
+      ? `other: ${classificationOther.trim()}`
+      : classification;
+
   try {
-    // Calculate supplement IDs from Local number
-    const supplementIds = getSupplementIds(parseInt(localNumber, 10));
-
-    // Build classification value (include "other" description if applicable)
-    const classificationValue =
-      classification === "other" && classificationOther
-        ? `other: ${classificationOther.trim()}`
-        : classification;
-
     // Complete onboarding
     await completeOnboarding(clerkId, {
       local_number: localNumber,
       classification: classificationValue,
       supplement_ids: supplementIds,
     });
-
-    // Redirect to main app
-    redirect("/");
   } catch (error) {
     console.error("Onboarding error:", error);
     return {
@@ -89,4 +86,7 @@ export async function submitOnboarding(
       },
     };
   }
+
+  // Redirect to main app (must be outside try/catch - redirect() throws)
+  redirect("/");
 }
