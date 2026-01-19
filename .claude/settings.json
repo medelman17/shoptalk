@@ -1,0 +1,75 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm dev)",
+      "Bash(pnpm build)",
+      "Bash(pnpm lint)",
+      "Bash(pnpm tsc:*)",
+      "Bash(pnpm prettier:*)",
+      "Bash(pnpm test:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(git show:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(which:*)",
+      "Bash(echo:*)",
+      "Bash(pwd)",
+      "Bash(date)",
+      "Bash(claude mcp:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(rm -rf ~)",
+      "Bash(rm -rf .)",
+      "Bash(*ANTHROPIC_API_KEY*)",
+      "Bash(*SECRET*)",
+      "Bash(*PASSWORD*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path' | grep -qE '(\\.env|\\.env\\.local|node_modules/|\\.git/)' && echo 'Cannot edit protected file' >&2 && exit 2 || exit 0"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path' | xargs -I {} sh -c 'case \"{}\" in *.ts|*.tsx|*.js|*.jsx) pnpm prettier --write \"{}\" 2>/dev/null ;; esac'",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path' | grep -qE 'src/.*[.](ts|tsx)$' && pnpm tsc --noEmit 2>&1 | head -30 || true",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'ShopTalk - Next.js 16 + Mastra AI project initialized'"
+          }
+        ]
+      }
+    ]
+  }
+}
