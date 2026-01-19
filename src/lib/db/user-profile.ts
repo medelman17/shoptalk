@@ -107,3 +107,54 @@ export async function updateUserUnionSettings(
 ): Promise<UserProfile> {
   return updateUserProfile(clerkId, settings);
 }
+
+/**
+ * Check if a user has completed onboarding.
+ *
+ * @param profile - The user profile to check
+ * @returns True if onboarding is complete
+ */
+export function isOnboardingComplete(profile: UserProfile | null): boolean {
+  if (!profile) return false;
+  return profile.onboarding_completed_at !== null;
+}
+
+/**
+ * Complete onboarding for a user by setting their union profile and marking completion.
+ *
+ * @param clerkId - The Clerk user ID
+ * @param settings - The onboarding form data
+ * @returns The updated user profile
+ */
+export async function completeOnboarding(
+  clerkId: string,
+  settings: {
+    local_number: string;
+    classification: string;
+    supplement_ids: string[];
+  }
+): Promise<UserProfile> {
+  const supabase = await createClient();
+
+  const updateData = {
+    local_number: settings.local_number,
+    classification: settings.classification,
+    supplement_ids: settings.supplement_ids,
+    onboarding_completed_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data, error } = await supabase
+    .from("user_profiles")
+    .update(updateData)
+    .eq("clerk_id", clerkId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error completing onboarding:", error);
+    throw error;
+  }
+
+  return data;
+}
