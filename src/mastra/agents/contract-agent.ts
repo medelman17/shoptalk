@@ -24,14 +24,22 @@ import { contractQueryTool } from "../tools/contract-query";
  * Requires POSTGRES_URL environment variable.
  */
 function createContractMemory(): Memory | undefined {
-  const connectionString = process.env.POSTGRES_URL;
+  // Use POSTGRES_PRISMA_URL which includes proper SSL config for serverless
+  let connectionString = process.env.POSTGRES_PRISMA_URL || process.env.POSTGRES_URL;
 
   if (!connectionString) {
     console.warn(
-      "POSTGRES_URL not set - Memory features disabled. " +
-        "Set POSTGRES_URL to enable conversation persistence, semantic recall, and working memory."
+      "POSTGRES_PRISMA_URL/POSTGRES_URL not set - Memory features disabled. " +
+        "Set a PostgreSQL connection string to enable conversation persistence, semantic recall, and working memory."
     );
     return undefined;
+  }
+
+  // In development, we may need to bypass SSL certificate validation for self-signed certs
+  // Supabase uses SSL but the certificate chain may not be recognized locally
+  if (process.env.NODE_ENV === "development" && !connectionString.includes("sslmode=no-verify")) {
+    const separator = connectionString.includes("?") ? "&" : "?";
+    connectionString = `${connectionString}${separator}sslmode=no-verify`;
   }
 
   // PostgresStore extends MastraCompositeStore which implements MastraStorage at runtime
@@ -81,9 +89,7 @@ function createContractMemory(): Memory | undefined {
       },
 
       // Auto-generate thread titles from first message
-      threads: {
-        generateTitle: true,
-      },
+      generateTitle: true,
     },
   });
 }
