@@ -54,20 +54,21 @@ export function PdfPanelProvider({ children }: PdfPanelProviderProps) {
     };
   }, [searchParams]);
 
-  // Open a PDF document
+  // Open a PDF document (shallow navigation - preserves state)
   const openPdf = useCallback(
     (documentId: string, page: number = 1) => {
       const params = new URLSearchParams(searchParams.toString());
       params.set("doc", documentId);
       params.set("page", String(page));
-      router.push(`${pathname}?${params.toString()}`);
+      // Use replace with scroll:false for shallow update
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     },
     [router, pathname, searchParams]
   );
 
   // Close the PDF panel
   const closePdf = useCallback(() => {
-    router.push(pathname);
+    router.replace(pathname, { scroll: false });
   }, [router, pathname]);
 
   // Change the current page (without adding to history)
@@ -75,7 +76,7 @@ export function PdfPanelProvider({ children }: PdfPanelProviderProps) {
     (page: number) => {
       const params = new URLSearchParams(searchParams.toString());
       params.set("page", String(page));
-      router.replace(`${pathname}?${params.toString()}`);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     },
     [router, pathname, searchParams]
   );
