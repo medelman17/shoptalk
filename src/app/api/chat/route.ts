@@ -86,8 +86,8 @@ export async function POST(req: Request) {
       ["userContextHeader", userContextHeader],
     ]);
 
-    // 7. Add user context to the latest user message
-    // Find the last user message and prepend context to it
+    // 7. Add user context to the latest user message (hidden instruction)
+    // The agent is instructed to start responses with this context header
     const lastUserMsgIdx = messages.findLastIndex((m) => m.role === "user");
     const messagesWithContext =
       lastUserMsgIdx >= 0
@@ -101,7 +101,7 @@ export async function POST(req: Request) {
                     p === textPart
                       ? {
                           ...p,
-                          text: `[USER CONTEXT - Include this header at start of response]\n${userContextHeader}\n---\n\n${textPart.text}`,
+                          text: `<user_context>\n${userContextHeader}\n</user_context>\n\n${textPart.text}`,
                         }
                       : p,
                   ),

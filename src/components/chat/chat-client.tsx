@@ -231,6 +231,11 @@ export function ChatClient({
     openPdf(citation.documentId, citation.page ?? 1);
   };
 
+  const handleContractClick = (documentId: string) => {
+    // Open PDF in the split-view panel (page 1 for contract header links)
+    openPdf(documentId, 1);
+  };
+
   const handleSuggestedQuestion = async (question: string) => {
     if (isLoading) return;
     setInput("");
@@ -352,6 +357,7 @@ export function ChatClient({
                         <MessageWithCitations
                           content={textContent}
                           onCitationClick={handleCitationClick}
+                          onContractClick={handleContractClick}
                           isStreaming={isStreaming}
                         />
                       ) : isStreaming && toolCalls.length === 0 ? (

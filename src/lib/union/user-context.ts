@@ -74,12 +74,15 @@ function formatContractChain(localNumber: number | null): string[] {
 }
 
 /**
- * Format the contract chain as clickable markdown links.
- * Each contract links to ?doc=documentId to open the PDF viewer.
+ * Format the contract chain with custom link markers.
+ * Uses format [[contract:documentId:Document Name]] which gets parsed client-side.
+ * This avoids markdown link blocking issues with relative URLs.
  */
 function formatContractChainWithLinks(localNumber: number | null): string {
   const contracts = getContractChainInfo(localNumber);
-  return contracts.map((c) => `[${c.name}](?doc=${c.id})`).join(" → ");
+  return contracts
+    .map((c) => `[[contract:${c.id}:${c.name}]]`)
+    .join(" → ");
 }
 
 /**
