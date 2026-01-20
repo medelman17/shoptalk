@@ -3,9 +3,7 @@
 import { memo, useMemo, type ComponentProps } from "react";
 import { Streamdown } from "streamdown";
 import { cn } from "@/lib/utils";
-import { parseFootnoteCitations, type Citation } from "@/lib/citations";
-import { CitationFootnote } from "./citation-footnote";
-import { SourcesList } from "./sources-list";
+import { transformToMarkdownFootnotes, type Citation } from "@/lib/citations";
 
 export interface MessageWithCitationsProps extends Omit<
   ComponentProps<"div">,
@@ -20,95 +18,34 @@ export interface MessageWithCitationsProps extends Omit<
 }
 
 /**
- * Renders a text segment with markdown support.
- */
-function TextSegment({
-  content,
-  isStreaming,
-}: {
-  content: string;
-  isStreaming?: boolean;
-}) {
-  // Use Streamdown for markdown rendering with streaming support
-  return (
-    <Streamdown
-      className="[&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
-      mode={isStreaming ? "streaming" : "static"}
-    >
-      {content}
-    </Streamdown>
-  );
-}
-
-/**
- * Message component that parses and renders footnote-style citations.
+ * Message component that transforms citations into native markdown footnotes.
  *
  * Detects citation markers like `[Doc: master, Art: 6, Page: 45]` and
- * replaces them with superscript footnote numbers (¹²³), showing a
- * deduplicated sources list at the end of the message.
+ * converts them to markdown footnote syntax `[^1]` with definitions
+ * at the end, letting the markdown renderer handle display.
  */
 export const MessageWithCitations = memo(
   function MessageWithCitations({
     content,
-    onCitationClick,
+    onCitationClick: _onCitationClick,
     isStreaming = false,
     className,
     ...props
   }: MessageWithCitationsProps) {
-    // Parse the content for footnote-style citations
-    const parsed = useMemo(() => parseFootnoteCitations(content), [content]);
+    // Transform citations to native markdown footnotes
+    const markdownContent = useMemo(
+      () => transformToMarkdownFootnotes(content),
+      [content],
+    );
 
-    // If no citations, render as plain markdown
-    if (parsed.sources.length === 0) {
-      return (
-        <div
-          className={cn("prose prose-sm dark:prose-invert", className)}
-          {...props}
-        >
-          <Streamdown mode={isStreaming ? "streaming" : "static"}>
-            {content}
-          </Streamdown>
-        </div>
-      );
-    }
-
-    // Render with footnote-style citations
     return (
       <div
         className={cn("prose prose-sm dark:prose-invert", className)}
         {...props}
       >
-        <div>
-          {parsed.segments.map((segment, index) => {
-            if (segment.type === "text") {
-              return (
-                <TextSegment
-                  key={`text-${index}`}
-                  content={segment.content}
-                  isStreaming={isStreaming}
-                />
-              );
-            }
-
-            // Footnote segment - render as superscript number
-            return (
-              <CitationFootnote
-                key={`fn-${index}`}
-                footnoteNumber={segment.footnoteNumber}
-                citation={segment.citation}
-                onClick={onCitationClick}
-              />
-            );
-          })}
-        </div>
-
-        {/* Sources list at the end - only show when not streaming */}
-        {!isStreaming && (
-          <SourcesList
-            sources={parsed.sources}
-            onSourceClick={onCitationClick}
-          />
-        )}
+        <Streamdown mode={isStreaming ? "streaming" : "static"}>
+          {markdownContent}
+        </Streamdown>
       </div>
     );
   },

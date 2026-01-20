@@ -205,6 +205,101 @@ function getCitationKey(citation: Citation): string {
 }
 
 /**
+ * Document display names for user-friendly footnotes.
+ */
+const DOCUMENT_NAMES: Record<string, string> = {
+  master: "National Master Agreement",
+  western: "Western Region Supplement",
+  central: "Central Region Supplement",
+  southern: "Southern Region Supplement",
+  atlantic: "Atlantic Area Supplement",
+  eastern: "Eastern Region Supplement",
+  "local-804": "Local 804 Agreement",
+  "local-705": "Local 705 Agreement",
+  "local-710": "Local 710 Agreement",
+  "northern-california": "Northern California Rider",
+  "southern-california": "Southern California Rider",
+  "southwest-package": "Southwest Package Rider",
+  "new-england": "New England Rider",
+  "upstate-ny": "Upstate NY Rider",
+  texas: "Texas Rider",
+  "ohio-valley": "Ohio Valley Rider",
+  "michigan-indiana": "Michigan-Indiana Rider",
+};
+
+function getDocumentName(documentId: string): string {
+  return (
+    DOCUMENT_NAMES[documentId] ||
+    documentId
+      .split("-")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ")
+  );
+}
+
+/**
+ * Transform citations into native markdown footnote syntax.
+ *
+ * Converts `[Doc: master, Art: 6, Page: 45]` into `[^1]` inline,
+ * with footnote definitions appended at the end.
+ *
+ * @param text - Text with citation markers
+ * @returns Markdown text with native footnotes
+ */
+export function transformToMarkdownFootnotes(text: string): string {
+  const sourceMap = new Map<string, { number: number; citation: Citation }>();
+  const regex = new RegExp(CITATION_REGEX.source, "g");
+  let nextNumber = 1;
+
+  // Replace citations with footnote references
+  const transformed = text.replace(regex, (match) => {
+    // Parse the citation from the match
+    const citationRegex = new RegExp(CITATION_REGEX.source);
+    const parsed = citationRegex.exec(match);
+    if (!parsed) return match;
+
+    const citation = parseCitationMatch(parsed);
+    const key = getCitationKey(citation);
+
+    let source = sourceMap.get(key);
+    if (!source) {
+      source = { number: nextNumber++, citation };
+      sourceMap.set(key, source);
+    } else if (citation.page && !source.citation.page) {
+      source.citation.page = citation.page;
+    }
+
+    return `[^${source.number}]`;
+  });
+
+  // If no citations, return original
+  if (sourceMap.size === 0) {
+    return text;
+  }
+
+  // Build footnote definitions
+  const footnotes = Array.from(sourceMap.values())
+    .sort((a, b) => a.number - b.number)
+    .map((source) => {
+      const { citation } = source;
+      let def = getDocumentName(citation.documentId);
+      if (citation.article) {
+        def += `, Art. ${citation.article}`;
+        if (citation.section) {
+          def += `, Sec. ${citation.section}`;
+        }
+      }
+      if (citation.page) {
+        def += ` (p. ${citation.page})`;
+      }
+      return `[^${source.number}]: ${def}`;
+    })
+    .join("\n");
+
+  return `${transformed}\n\n${footnotes}`;
+}
+
+/**
  * Parse text into footnote-style segments with deduplicated sources.
  *
  * This is ideal for academic/Wikipedia-style citation rendering:
