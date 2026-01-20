@@ -1,9 +1,10 @@
 ---
 id: task-5.2
 title: Citation-to-PDF Flow
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-19 19:44'
+updated_date: '2026-01-20 15:09'
 labels:
   - P0
   - polish
@@ -51,9 +52,41 @@ Query Response
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Tapping citation navigates to PDF viewer
-- [ ] #2 PDF opens at the cited page number
-- [ ] #3 Back button returns to query result
-- [ ] #4 Query state preserved after viewing PDF
-- [ ] #5 Download fallback available when needed
+- [x] #1 Tapping citation navigates to PDF viewer
+- [x] #2 PDF opens at the cited page number
+- [x] #3 Back button returns to query result
+- [x] #4 Query state preserved after viewing PDF
+- [x] #5 Download fallback available when needed
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+## Implementation Notes (Completed 2026-01-20)
+
+### Flow Changed to Split-View
+Instead of navigating away from chat, citations now open PDF in adjacent panel:
+```
+Chat Response (left panel)
+  → Click Citation
+    → PDF Panel opens (right panel)
+      → Both visible simultaneously
+        → Close button or resize to dismiss
+```
+
+### Components Involved
+- `MessageWithCitations` - Parses citation format, renders clickable badges
+- `ContractCitation` - Badge with hover card showing document info
+- `usePdfPanel` hook - Opens PDF via context
+- `SplitViewContainer` - Manages resizable layout
+
+### URL State
+- Format: `/chat/[conversationId]?doc=master&page=42`
+- Shareable - URL contains full state
+- `router.push` for open, `router.replace` for page changes (no history spam)
+
+### Mobile Behavior
+- PDF opens as bottom sheet (85vh height)
+- Swipe or X button to dismiss
+- Chat remains scrollable underneath
+<!-- SECTION:NOTES:END -->

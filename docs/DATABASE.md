@@ -48,9 +48,11 @@ CREATE INDEX idx_user_profiles_clerk_id ON user_profiles(clerk_id);
 COMMENT ON TABLE user_profiles IS 'User profiles synced from Clerk with union-specific settings';
 ```
 
-### Queries Table
+### Queries Table (Legacy)
 
-Stores query history for users to review past questions and answers.
+> **Note:** This table is kept for backward compatibility. New conversations use the `conversations` and `messages` tables below.
+
+Stores single-turn query history.
 
 ```sql
 CREATE TABLE queries (
@@ -72,14 +74,60 @@ CREATE INDEX idx_queries_created_at ON queries(created_at DESC);
 COMMENT ON TABLE queries IS 'User query history with AI answers and citations';
 ```
 
+### Conversations Table
+
+Stores multi-turn conversation sessions.
+
+```sql
+CREATE TABLE conversations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
+  title TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Index for fast user lookup
+CREATE INDEX idx_conversations_user_id ON conversations(user_id);
+
+-- Index for ordering by most recent
+CREATE INDEX idx_conversations_updated_at ON conversations(updated_at DESC);
+
+-- Add comment
+COMMENT ON TABLE conversations IS 'Multi-turn conversation sessions';
+```
+
+### Messages Table
+
+Stores individual messages within conversations.
+
+```sql
+CREATE TABLE messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
+  content TEXT NOT NULL,
+  citations JSONB DEFAULT '[]',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Index for fast conversation message lookup
+CREATE INDEX idx_messages_conversation_id ON messages(conversation_id);
+
+-- Add comment
+COMMENT ON TABLE messages IS 'Individual messages within conversations';
+```
+
 ## Row Level Security (RLS)
 
-Enable RLS on both tables. The webhook uses service_role (bypasses RLS).
+Enable RLS on all tables. The application uses `service_role` (admin client) which bypasses RLS, since Clerk auth doesn't create Supabase sessions.
 
 ```sql
 -- Enable RLS
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE queries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 
 -- User profiles: Users can only view/update their own profile
 -- Note: We match on clerk_id since that's what we have from Clerk auth
@@ -103,7 +151,19 @@ CREATE POLICY "Users can insert own queries"
 CREATE POLICY "Users can delete own queries"
   ON queries FOR DELETE
   USING (true);  -- Actual filtering done in application code
+
+-- Conversations: Users can only access their own conversations
+CREATE POLICY "Users can manage own conversations"
+  ON conversations FOR ALL
+  USING (true);  -- Actual filtering done in application code via user_id
+
+-- Messages: Users can only access messages in their conversations
+CREATE POLICY "Users can manage messages in own conversations"
+  ON messages FOR ALL
+  USING (true);  -- Actual filtering done in application code via conversation_id join
 ```
+
+> **Note:** RLS policies are permissive (`USING (true)`) because the app uses `createAdminClient` which bypasses RLS. Authorization is enforced in application code by filtering on `user_id` from Clerk session.
 
 ## Column Descriptions
 
@@ -132,12 +192,33 @@ CREATE POLICY "Users can delete own queries"
 | `citations` | JSONB | Array of citation objects |
 | `created_at` | TIMESTAMPTZ | When query was made |
 
+### conversations
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID | Conversation primary key |
+| `user_id` | UUID | References user_profiles.id |
+| `title` | TEXT | Auto-generated from first message or user-set (nullable) |
+| `created_at` | TIMESTAMPTZ | When conversation was started |
+| `updated_at` | TIMESTAMPTZ | When last message was added |
+
+### messages
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID | Message primary key |
+| `conversation_id` | UUID | References conversations.id |
+| `role` | TEXT | Either 'user' or 'assistant' |
+| `content` | TEXT | Message text content |
+| `citations` | JSONB | Array of citation objects (for assistant messages) |
+| `created_at` | TIMESTAMPTZ | When message was sent |
+
 ### Citation Object Schema
 
 ```typescript
 interface Citation {
-  source: string;      // Document name or section
-  text: string;        // Quoted text
+  source: string;      // Document ID (e.g., "master", "western")
+  text: string;        // Raw citation text
   page?: number;       // Page number if applicable
   section?: string;    // Section reference
 }
@@ -189,7 +270,8 @@ SUPABASE_PROJECT_ID=<your-project-id> pnpm db:generate-types
 ```
 supabase/migrations/
 ├── 20260119203957_initial_schema.sql           # user_profiles, queries tables + RLS
-└── 20260119210000_add_onboarding_completed_at.sql  # Add onboarding timestamp column
+├── 20260119210000_add_onboarding_completed_at.sql  # Add onboarding timestamp column
+└── 20260120_add_conversations.sql              # conversations, messages tables + RLS
 ```
 
 ## Classification Values

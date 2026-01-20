@@ -1,9 +1,10 @@
 ---
 id: task-5.4
 title: PWA Configuration
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-19 19:44'
+updated_date: '2026-01-20 15:09'
 labels:
   - P0
   - polish
@@ -58,10 +59,39 @@ Configure the app as a Progressive Web App for installability and offline suppor
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Web App Manifest created with all required fields
-- [ ] #2 Service worker caches app shell
-- [ ] #3 Offline fallback page displays when disconnected
-- [ ] #4 Install prompt appears after 3rd query
-- [ ] #5 iOS-specific meta tags configured
-- [ ] #6 App installable on Chrome Android and Safari iOS
+- [x] #1 Web App Manifest created with all required fields
+- [x] #2 Service worker caches app shell
+- [x] #3 Offline fallback page displays when disconnected
+- [x] #4 Install prompt appears after 3rd query
+- [x] #5 iOS-specific meta tags configured
+- [x] #6 App installable on Chrome Android and Safari iOS
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+## Implementation Notes (Completed 2026-01-20)
+
+### PWA Configuration
+- `src/app/manifest.webmanifest/route.ts` - Dynamic manifest generation
+- `src/app/offline/page.tsx` - Offline fallback page
+- iOS meta tags added to root layout
+
+### Manifest Details
+- Name: "ShopTalk Contract Assistant"
+- Short name: "ShopTalk"
+- Display: standalone
+- Theme color: #000000
+- Icons: 192px and 512px variants
+
+### Install Prompt Logic
+- `src/lib/pwa/query-counter.ts` - Tracks query count in localStorage
+- `src/components/pwa/install-prompt.tsx` - Shows banner after 3rd query
+- Detects `beforeinstallprompt` event for Chrome/Android
+- iOS detection shows manual install instructions
+
+### Offline Support
+- Basic offline page with retry button
+- Service worker registration (via next-pwa or manual)
+- Network status detection in error handling
+<!-- SECTION:NOTES:END -->

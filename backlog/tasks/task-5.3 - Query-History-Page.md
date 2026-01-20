@@ -1,9 +1,10 @@
 ---
 id: task-5.3
 title: Query History Page
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-19 19:44'
+updated_date: '2026-01-20 15:09'
 labels:
   - P0
   - polish
@@ -51,9 +52,42 @@ Build a page for viewing and revisiting past queries.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 History page lists recent queries
-- [ ] #2 Query preview shows truncated question
-- [ ] #3 Tapping query shows full answer with citations
-- [ ] #4 Shareable URL works for specific queries
-- [ ] #5 Empty state shown when no history
+- [x] #1 History page lists recent queries
+- [x] #2 Query preview shows truncated question
+- [x] #3 Tapping query shows full answer with citations
+- [x] #4 Shareable URL works for specific queries
+- [x] #5 Empty state shown when no history
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+## Implementation Notes (Completed 2026-01-20)
+
+### Major Architecture Change
+Replaced separate history page with **sidebar conversation list** (ChatGPT-style):
+- Conversations displayed in sidebar, always visible
+- Grouped by: Today, Yesterday, Previous 7 Days, Older
+- Click to load conversation in main chat area
+
+### Components Built
+- `ConversationList` - Scrollable grouped list
+- `ConversationItem` - Single item with title, delete action
+- `AppSidebar` - Contains list + new chat button
+
+### Database Tables
+- `conversations` - id, user_id, title, created_at, updated_at
+- `messages` - id, conversation_id, role, content, citations (JSONB)
+
+### API Endpoints
+- `GET /api/conversations` - List user's conversations
+- `POST /api/conversations` - Create new conversation
+- `GET /api/conversations/[id]` - Get with messages
+- `DELETE /api/conversations/[id]` - Delete conversation
+- `POST /api/conversations/[id]/messages` - Add message
+
+### Legacy Routes
+- `/history` now redirects to `/chat`
+- `/history/[queryId]` redirects to `/chat`
+- Old `queries` table kept for backward compatibility
+<!-- SECTION:NOTES:END -->

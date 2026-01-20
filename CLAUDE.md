@@ -42,6 +42,25 @@ Next.js 16 app with Mastra AI framework for building conversational agents that 
 - Citation format: `[Doc: {documentId}, Art: {article}, Sec: {section}, Page: {page}]`
 - Uses AI SDK v6 with `useChat` hook and `DefaultChatTransport`
 
+### Conversations & Messages
+- Multi-turn conversations stored in `conversations` and `messages` tables
+- Data access in `src/lib/db/conversations.ts` and `messages.ts`
+- API routes at `/api/conversations/` for CRUD operations
+- Uses `createAdminClient` (not `createClient`) because Clerk auth doesn't have Supabase session
+
+### App Shell & Layout
+- Sidebar with conversation history in `src/components/sidebar/`
+- Split-view layout in `src/components/layout/split-view-container.tsx`
+- PDF panel context in `src/contexts/pdf-panel-context.tsx` (URL-synced state)
+- Mobile: sidebar as left sheet, PDF as bottom sheet (85vh)
+- Desktop: resizable panels with `react-resizable-panels`
+
+### PDF Viewer
+- PDF components in `src/components/pdf/`
+- Uses `react-pdf` with dynamic import (`ssr: false`) to avoid DOMMatrix errors
+- PDF served via `/api/pdf/[documentId]` from local `data/contracts/` files
+- Document manifest in `src/lib/documents/manifest.ts`
+
 ### Authentication (Clerk)
 - Auth utilities in `src/lib/auth.ts`
 - Route protection via `src/middleware.ts`
@@ -66,23 +85,37 @@ src/
 ├── app/                      # Next.js routes (App Router)
 │   ├── (auth)/               # Auth pages (sign-in, sign-up)
 │   ├── (authenticated)/      # Protected routes
-│   │   ├── (app)/            # Routes requiring completed onboarding
-│   │   │   ├── chat/         # Contract Q&A chat interface
+│   │   ├── (app)/            # Routes with sidebar layout
+│   │   │   ├── chat/         # Chat routes
+│   │   │   │   ├── page.tsx  # New conversation (redirects)
+│   │   │   │   └── [conversationId]/  # Conversation view
+│   │   │   ├── pdf/          # Standalone PDF viewer
 │   │   │   └── settings/     # User settings
 │   │   └── onboarding/       # User onboarding flow
 │   └── api/
 │       ├── chat/             # Streaming chat endpoint
+│       ├── conversations/    # Conversation CRUD
+│       ├── pdf/              # PDF file serving
 │       └── webhooks/         # Webhook handlers
 ├── components/
-│   ├── ui/                   # Reusable UI primitives
-│   └── ai-elements/          # AI output visualizations (citations, messages)
+│   ├── ai-elements/          # AI output (citations, messages)
+│   ├── chat/                 # Chat UI (ChatClient, CharacterCounter)
+│   ├── layout/               # App shell (SplitViewContainer, AppHeader)
+│   ├── pdf/                  # PDF viewer components
+│   ├── pwa/                  # PWA install prompt
+│   ├── sidebar/              # Sidebar navigation
+│   └── ui/                   # Reusable UI primitives (shadcn)
+├── contexts/
+│   └── pdf-panel-context.tsx # PDF panel state (URL-synced)
 ├── lib/
 │   ├── auth.ts               # Auth utilities
 │   ├── citations/            # Citation parsing and types
-│   ├── supabase/             # Supabase clients
-│   ├── db/                   # Data access layer
-│   ├── documents/            # PDF extraction & document manifest
+│   ├── db/                   # Data access (conversations, messages, etc.)
+│   ├── documents/            # Document manifest
+│   ├── errors/               # Error types and factories
+│   ├── pwa/                  # PWA utilities (query counter)
 │   ├── rag/                  # RAG pipeline (processor, vector-store)
+│   ├── supabase/             # Supabase clients
 │   └── union/                # Local union data & supplement mapping
 ├── mastra/
 │   ├── agents/               # AI agents (contract-agent)
