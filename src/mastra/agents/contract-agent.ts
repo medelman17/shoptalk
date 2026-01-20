@@ -36,13 +36,15 @@ function createContractMemory(): Memory | undefined {
   }
 
   // Handle connection parameters for PostgreSQL
-  // - Development: Use sslmode=no-verify to bypass certificate validation
-  // - Production: Use sslmode=require + pgbouncer=true for Supabase pooler
+  // - Use sslmode=no-verify to bypass certificate validation
+  //   (Supabase pooler uses SSL but the certificate chain can't be verified by Node.js)
+  // - Production also needs pgbouncer=true for Supabase pooler compatibility
   const params: string[] = [];
 
   if (!connectionString.includes("sslmode=")) {
-    const sslMode = process.env.NODE_ENV === "development" ? "no-verify" : "require";
-    params.push(`sslmode=${sslMode}`);
+    // Use no-verify for both dev and prod - Supabase pooler's cert chain
+    // triggers "self-signed certificate in certificate chain" error
+    params.push("sslmode=no-verify");
   }
 
   // Add pgbouncer=true for Supabase connection pooler compatibility
