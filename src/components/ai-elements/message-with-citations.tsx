@@ -30,29 +30,62 @@ export interface MessageWithCitationsProps extends Omit<
 }
 
 /**
- * Contract link pattern: [[contract:documentId:Document Name]]
+ * Mapping of contract display names to document IDs.
+ * Used to detect and linkify contract names in plain text.
  */
-const CONTRACT_LINK_PATTERN = /\[\[contract:([^:]+):([^\]]+)\]\]/g;
+const CONTRACT_NAME_TO_ID: Record<string, string> = {
+  // Master Agreement
+  "Master Agreement": "master",
+  "National Master Agreement": "master",
+  // Regional Supplements
+  "Western Supplement": "western",
+  "Central Supplement": "central",
+  "Southern Supplement": "southern",
+  "Atlantic Supplement": "atlantic",
+  "Eastern Supplement": "eastern",
+  // Standalone Locals
+  "Local 804 Agreement": "local-804",
+  "Local 705 Agreement": "local-705",
+  "Local 710 Agreement": "local-710",
+  // Riders
+  "NorCal Rider": "northern-california",
+  "Northern California Rider": "northern-california",
+  "SoCal Rider": "southern-california",
+  "Southern California Rider": "southern-california",
+  "SW Package Rider": "southwest-package",
+  "Southwest Package Rider": "southwest-package",
+  "New England Rider": "new-england",
+  "Upstate NY Rider": "upstate-ny",
+  "Upstate New York Rider": "upstate-ny",
+  "Texas Rider": "texas",
+  "Ohio Valley Rider": "ohio-valley",
+  "MI-IN Rider": "michigan-indiana",
+  "Michigan-Indiana Rider": "michigan-indiana",
+};
 
 /**
- * Transform contract link markers into clickable spans.
- * Returns the transformed markdown with contract links as special markers.
+ * Build regex pattern to match all known contract names.
+ * Sorts by length descending to match longer names first.
  */
-function transformContractLinks(
-  content: string,
-  onContractClick?: (documentId: string) => void,
-): { markdown: string; contractLinks: Map<string, { id: string; name: string }> } {
-  const contractLinks = new Map<string, { id: string; name: string }>();
-  let linkIndex = 0;
+const CONTRACT_NAMES_PATTERN = new RegExp(
+  `(${Object.keys(CONTRACT_NAME_TO_ID)
+    .sort((a, b) => b.length - a.length)
+    .map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("|")})`,
+  "g"
+);
 
-  const markdown = content.replace(CONTRACT_LINK_PATTERN, (_, docId, docName) => {
-    const key = `__CONTRACT_LINK_${linkIndex++}__`;
-    contractLinks.set(key, { id: docId, name: docName });
-    // Return a styled link that we'll make clickable
-    return `[${docName}](#contract-${docId})`;
+/**
+ * Transform plain text contract names into clickable links.
+ */
+function transformContractLinks(content: string): string {
+  return content.replace(CONTRACT_NAMES_PATTERN, (match) => {
+    const docId = CONTRACT_NAME_TO_ID[match];
+    if (docId) {
+      return `[${match}](#contract-${docId})`;
+    }
+    return match;
   });
-
-  return { markdown, contractLinks };
 }
 
 /**
@@ -84,8 +117,8 @@ export const MessageWithCitations = memo(
     className,
     ...props
   }: MessageWithCitationsProps) {
-    // First transform contract links, then citations
-    const { markdown: contractTransformed } = useMemo(
+    // First transform contract names to links, then citations
+    const contractTransformed = useMemo(
       () => transformContractLinks(content),
       [content],
     );

@@ -146,7 +146,7 @@ const CONTRACT_AGENT_INSTRUCTIONS = `You are a knowledgeable assistant helping U
 Each user message contains a <user_context> block with their position and applicable contracts.
 You MUST start EVERY response by copying this context header EXACTLY as provided, followed by a horizontal rule (---), then your answer.
 
-The context uses a special format [[contract:id:name]] for contract links - copy these EXACTLY as they appear.
+Copy the context header as plain text - do not add any markdown links or formatting to the contract names.
 
 ## CRITICAL: Response Format
 - NEVER output thinking, planning, reasoning, or search narration
@@ -194,11 +194,11 @@ End EVERY response with this disclaimer on its own line:
 ## Example Response
 "**Position:** Package Car Driver (RPCD)
 **Local:** Teamsters Local 63
-**Applicable Contracts:** [[contract:master:Master Agreement]] → [[contract:western:Western Supplement]] → [[contract:northern-california:NorCal Rider]]
+**Applicable Contracts:** Master Agreement → Western Supplement → NorCal Rider
 
 ---
 
-Under the Master Agreement, overtime pay is calculated at time-and-a-half for hours worked over 8 in a day or 40 in a week [Doc: master, Art: 12, Sec: 1, Page: 67]. Your Western Region Supplement provides additional protections, requiring overtime for any work on the sixth consecutive day [Doc: western, Art: 8, Page: 34].
+Under the Master Agreement, overtime pay is calculated at time-and-a-half for hours worked over 8 in a day or 40 in a week [Doc: master, Art: 12, Sec: 1, Page: 67]. Your Western Supplement provides additional protections, requiring overtime for any work on the sixth consecutive day [Doc: western, Art: 8, Page: 34].
 
 ---
 *This information is for educational purposes only and does not constitute legal advice. For specific situations, consult your union steward or business agent.*"

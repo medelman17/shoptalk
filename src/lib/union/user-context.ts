@@ -74,15 +74,12 @@ function formatContractChain(localNumber: number | null): string[] {
 }
 
 /**
- * Format the contract chain with custom link markers.
- * Uses format [[contract:documentId:Document Name]] which gets parsed client-side.
- * This avoids markdown link blocking issues with relative URLs.
+ * Format the contract chain as plain text.
+ * Client-side rendering will make these clickable based on known document names.
  */
-function formatContractChainWithLinks(localNumber: number | null): string {
+function formatContractChainAsText(localNumber: number | null): string {
   const contracts = getContractChainInfo(localNumber);
-  return contracts
-    .map((c) => `[[contract:${c.id}:${c.name}]]`)
-    .join(" → ");
+  return contracts.map((c) => c.name).join(" → ");
 }
 
 /**
@@ -114,9 +111,9 @@ export function buildUserContext(
     parts.push(`**Local:** ${localName}`);
   }
 
-  // Contract chain line with clickable links
-  const contractLinks = formatContractChainWithLinks(localNumber);
-  parts.push(`**Applicable Contracts:** ${contractLinks}`);
+  // Contract chain line (plain text - made clickable client-side)
+  const contractText = formatContractChainAsText(localNumber);
+  parts.push(`**Applicable Contracts:** ${contractText}`);
 
   const formatted = parts.join("\n");
 
