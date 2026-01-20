@@ -35,14 +35,30 @@ function createContractMemory(): Memory | undefined {
     return undefined;
   }
 
-  // Handle SSL mode for PostgreSQL connections
-  // - Development: Use sslmode=no-verify to bypass certificate validation for local testing
-  // - Production: Use sslmode=require for Supabase pooler connections (valid certs, no verification needed)
+  // Handle connection parameters for PostgreSQL
+  // - Development: Use sslmode=no-verify to bypass certificate validation
+  // - Production: Use sslmode=require + pgbouncer=true for Supabase pooler
+  const params: string[] = [];
+
   if (!connectionString.includes("sslmode=")) {
-    const separator = connectionString.includes("?") ? "&" : "?";
     const sslMode = process.env.NODE_ENV === "development" ? "no-verify" : "require";
-    connectionString = `${connectionString}${separator}sslmode=${sslMode}`;
+    params.push(`sslmode=${sslMode}`);
   }
+
+  // Add pgbouncer=true for Supabase connection pooler compatibility
+  // This disables prepared statements which aren't supported by PgBouncer
+  if (!connectionString.includes("pgbouncer=") && process.env.NODE_ENV !== "development") {
+    params.push("pgbouncer=true");
+  }
+
+  if (params.length > 0) {
+    const separator = connectionString.includes("?") ? "&" : "?";
+    connectionString = `${connectionString}${separator}${params.join("&")}`;
+  }
+
+  // Log connection setup (without exposing credentials)
+  const urlObj = new URL(connectionString);
+  console.log(`[MastraMemory] Connecting to ${urlObj.host}${urlObj.pathname} with params: ${urlObj.searchParams.toString()}`);
 
   // PostgresStore extends MastraCompositeStore which implements MastraStorage at runtime
   // but TypeScript types don't reflect this, so we cast it
