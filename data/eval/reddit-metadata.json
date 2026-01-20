@@ -1,0 +1,23 @@
+{
+  "version": "1.0.0",
+  "createdAt": "2026-01-20T19:24:44.117Z",
+  "updatedAt": "2026-01-20T19:24:44.117Z",
+  "totalPosts": 16,
+  "totalQuestions": 16,
+  "totalContractRelated": 16,
+  "totalAnswers": 65,
+  "avgAnswersPerQuestion": 4.1,
+  "topicDistribution": {
+    "overtime": 10,
+    "grievance": 9,
+    "classification": 7,
+    "wages": 5,
+    "seniority": 4,
+    "hours": 3,
+    "benefits": 1
+  },
+  "searchQueries": [
+    "grievance"
+  ],
+  "fetchDuration": 54
+}

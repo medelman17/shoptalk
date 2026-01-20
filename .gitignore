@@ -44,9 +44,6 @@ next-env.d.ts
 .claude/settings.local.json
 .env*.local
 
-# contract documents (large PDFs, stored in Vercel Blob for production)
-/data/contracts/
-
 # document processing artifacts (generated files)
 /data/extracted/
 /data/chunks/
