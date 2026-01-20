@@ -14,6 +14,11 @@ import {
   transformToMarkdownFootnotesWithMap,
   type Citation,
 } from "@/lib/citations";
+import {
+  UserContextHeader,
+  hasUserContextHeader,
+  stripUserContextHeader,
+} from "./user-context-header";
 
 export interface MessageWithCitationsProps extends Omit<
   ComponentProps<"div">,
@@ -117,10 +122,22 @@ export const MessageWithCitations = memo(
     className,
     ...props
   }: MessageWithCitationsProps) {
-    // First transform contract names to links, then citations
-    const contractTransformed = useMemo(
-      () => transformContractLinks(content),
+    // Check if content has a user context header
+    const showContextHeader = useMemo(
+      () => hasUserContextHeader(content),
       [content],
+    );
+
+    // Strip the context header from content for separate rendering
+    const mainContent = useMemo(
+      () => (showContextHeader ? stripUserContextHeader(content) : content),
+      [content, showContextHeader],
+    );
+
+    // Transform contract names to links, then citations
+    const contractTransformed = useMemo(
+      () => transformContractLinks(mainContent),
+      [mainContent],
     );
 
     // Transform citations to native markdown footnotes
@@ -191,16 +208,23 @@ export const MessageWithCitations = memo(
     );
 
     return (
-      <div
-        className={cn("prose prose-sm dark:prose-invert", className)}
-        {...props}
-      >
-        <Streamdown
-          mode={isStreaming ? "streaming" : "static"}
-          components={{ a: CustomAnchor }}
-        >
-          {markdown}
-        </Streamdown>
+      <div className={className} {...props}>
+        {/* Render user context header in a styled card */}
+        {showContextHeader && (
+          <UserContextHeader
+            content={content}
+            onContractClick={onContractClick}
+          />
+        )}
+        {/* Render main content with citations */}
+        <div className="prose prose-sm dark:prose-invert">
+          <Streamdown
+            mode={isStreaming ? "streaming" : "static"}
+            components={{ a: CustomAnchor }}
+          >
+            {markdown}
+          </Streamdown>
+        </div>
       </div>
     );
   },
