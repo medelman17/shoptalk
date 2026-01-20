@@ -10,7 +10,14 @@
  * - [Doc: northern-california, Page: 8]
  */
 
-import type { Citation, ParseResult, TextSegment } from "./types";
+import type {
+  Citation,
+  ParseResult,
+  TextSegment,
+  FootnoteParseResult,
+  FootnoteSegment,
+  UniqueSource,
+} from "./types";
 
 /**
  * Regular expression to match citation patterns.
@@ -120,7 +127,7 @@ export function parseCitations(text: string): ParseResult {
  */
 export function formatCitation(
   citation: Citation,
-  style: "short" | "full" = "short"
+  style: "short" | "full" = "short",
 ): string {
   if (style === "short") {
     // Short format: "Master Art. 6" or "Western p.12"
@@ -171,7 +178,10 @@ export function formatCitation(
  * @returns Text with citations removed
  */
 export function stripCitations(text: string): string {
-  return text.replace(CITATION_REGEX, "").replace(/\s{2,}/g, " ").trim();
+  return text
+    .replace(CITATION_REGEX, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }
 
 /**
@@ -182,4 +192,95 @@ export function stripCitations(text: string): string {
  */
 export function hasCitations(text: string): boolean {
   return CITATION_REGEX.test(text);
+}
+
+/**
+ * Generate a unique key for a citation based on its core identifiers.
+ * Used for deduplication - citations with the same key are considered the same source.
+ */
+function getCitationKey(citation: Citation): string {
+  // Include documentId, article, and section in the key
+  // Page is NOT included - same article/section on different pages = same source
+  return `${citation.documentId}|${citation.article || ""}|${citation.section || ""}`;
+}
+
+/**
+ * Parse text into footnote-style segments with deduplicated sources.
+ *
+ * This is ideal for academic/Wikipedia-style citation rendering:
+ * - Inline superscript numbers (¹²³)
+ * - Deduplicated sources list at the end
+ *
+ * @param text - The text to parse
+ * @returns FootnoteParseResult with unique sources and segments
+ */
+export function parseFootnoteCitations(text: string): FootnoteParseResult {
+  const segments: FootnoteSegment[] = [];
+  const sourceMap = new Map<string, UniqueSource>();
+  const regex = new RegExp(CITATION_REGEX.source, "g");
+
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let nextFootnoteNumber = 1;
+
+  while ((match = regex.exec(text)) !== null) {
+    // Add text before this citation
+    if (match.index > lastIndex) {
+      segments.push({
+        type: "text",
+        content: text.slice(lastIndex, match.index),
+      });
+    }
+
+    // Parse the citation
+    const citation = parseCitationMatch(match);
+    const key = getCitationKey(citation);
+
+    // Check if we've seen this source before
+    let source = sourceMap.get(key);
+    if (source) {
+      // Increment occurrences
+      source.occurrences++;
+      // Update page if this occurrence has a more specific page
+      if (citation.page && !source.citation.page) {
+        source.citation.page = citation.page;
+      }
+    } else {
+      // New unique source
+      source = {
+        footnoteNumber: nextFootnoteNumber++,
+        citation,
+        occurrences: 1,
+      };
+      sourceMap.set(key, source);
+    }
+
+    // Add footnote segment
+    segments.push({
+      type: "footnote",
+      footnoteNumber: source.footnoteNumber,
+      citation: source.citation,
+    });
+
+    lastIndex = regex.lastIndex;
+  }
+
+  // Add any remaining text after the last citation
+  if (lastIndex < text.length) {
+    segments.push({
+      type: "text",
+      content: text.slice(lastIndex),
+    });
+  }
+
+  // Convert source map to sorted array
+  const sources = Array.from(sourceMap.values()).sort(
+    (a, b) => a.footnoteNumber - b.footnoteNumber,
+  );
+
+  return {
+    original: text,
+    sources,
+    segments,
+  };
 }

@@ -22,12 +22,39 @@ export interface Citation {
 }
 
 /**
+ * A citation with an assigned footnote number.
+ */
+export interface NumberedCitation extends Citation {
+  /** Footnote number (1-indexed) */
+  footnoteNumber: number;
+}
+
+/**
+ * A unique source that may be referenced multiple times.
+ */
+export interface UniqueSource {
+  /** Footnote number (1-indexed) */
+  footnoteNumber: number;
+  /** The citation details */
+  citation: Citation;
+  /** How many times this source was cited */
+  occurrences: number;
+}
+
+/**
  * A parsed segment of text that may contain citations.
  * Used for rendering text with inline citation badges.
  */
 export type TextSegment =
   | { type: "text"; content: string }
   | { type: "citation"; citation: Citation };
+
+/**
+ * Footnote-style segment with numbered references.
+ */
+export type FootnoteSegment =
+  | { type: "text"; content: string }
+  | { type: "footnote"; footnoteNumber: number; citation: Citation };
 
 /**
  * Result of parsing text for citations.
@@ -39,4 +66,16 @@ export interface ParseResult {
   citations: Citation[];
   /** Text segments for rendering (alternating text and citations) */
   segments: TextSegment[];
+}
+
+/**
+ * Result of parsing text for footnote-style citations.
+ */
+export interface FootnoteParseResult {
+  /** The original text */
+  original: string;
+  /** Unique sources, deduplicated and numbered */
+  sources: UniqueSource[];
+  /** Text segments with footnote numbers */
+  segments: FootnoteSegment[];
 }

@@ -1,10 +1,11 @@
 "use client";
 
-import { memo, useMemo, Fragment, type ComponentProps } from "react";
+import { memo, useMemo, type ComponentProps } from "react";
 import { Streamdown } from "streamdown";
 import { cn } from "@/lib/utils";
-import { parseCitations, type Citation } from "@/lib/citations";
-import { ContractCitation } from "./contract-citation";
+import { parseFootnoteCitations, type Citation } from "@/lib/citations";
+import { CitationFootnote } from "./citation-footnote";
+import { SourcesList } from "./sources-list";
 
 export interface MessageWithCitationsProps extends Omit<
   ComponentProps<"div">,
@@ -29,8 +30,6 @@ function TextSegment({
   isStreaming?: boolean;
 }) {
   // Use Streamdown for markdown rendering with streaming support
-  // Note: Removed "inline" class - it was breaking block-level elements like lists
-  // Citations are inline elements and will flow naturally within text
   return (
     <Streamdown
       className="[&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
@@ -42,11 +41,11 @@ function TextSegment({
 }
 
 /**
- * Message component that parses and renders inline citations.
+ * Message component that parses and renders footnote-style citations.
  *
  * Detects citation markers like `[Doc: master, Art: 6, Page: 45]` and
- * replaces them with clickable citation badges while preserving the
- * surrounding markdown content.
+ * replaces them with superscript footnote numbers (¹²³), showing a
+ * deduplicated sources list at the end of the message.
  */
 export const MessageWithCitations = memo(
   function MessageWithCitations({
@@ -56,11 +55,11 @@ export const MessageWithCitations = memo(
     className,
     ...props
   }: MessageWithCitationsProps) {
-    // Parse the content for citations
-    const parsed = useMemo(() => parseCitations(content), [content]);
+    // Parse the content for footnote-style citations
+    const parsed = useMemo(() => parseFootnoteCitations(content), [content]);
 
     // If no citations, render as plain markdown
-    if (parsed.citations.length === 0) {
+    if (parsed.sources.length === 0) {
       return (
         <div
           className={cn("prose prose-sm dark:prose-invert", className)}
@@ -73,32 +72,43 @@ export const MessageWithCitations = memo(
       );
     }
 
-    // Render with inline citations
+    // Render with footnote-style citations
     return (
       <div
         className={cn("prose prose-sm dark:prose-invert", className)}
         {...props}
       >
-        {parsed.segments.map((segment, index) => {
-          if (segment.type === "text") {
+        <div>
+          {parsed.segments.map((segment, index) => {
+            if (segment.type === "text") {
+              return (
+                <TextSegment
+                  key={`text-${index}`}
+                  content={segment.content}
+                  isStreaming={isStreaming}
+                />
+              );
+            }
+
+            // Footnote segment - render as superscript number
             return (
-              <TextSegment
-                key={`text-${index}`}
-                content={segment.content}
-                isStreaming={isStreaming}
+              <CitationFootnote
+                key={`fn-${index}`}
+                footnoteNumber={segment.footnoteNumber}
+                citation={segment.citation}
+                onClick={onCitationClick}
               />
             );
-          }
+          })}
+        </div>
 
-          // Citation segment
-          return (
-            <ContractCitation
-              key={`citation-${index}`}
-              citation={segment.citation}
-              onClick={onCitationClick}
-            />
-          );
-        })}
+        {/* Sources list at the end - only show when not streaming */}
+        {!isStreaming && (
+          <SourcesList
+            sources={parsed.sources}
+            onSourceClick={onCitationClick}
+          />
+        )}
       </div>
     );
   },
