@@ -37,7 +37,7 @@ export function PdfPanel({
   return (
     <div className={cn("flex h-full flex-col", className)}>
       {/* Header */}
-      <div className="flex items-center justify-between border-b px-4 py-3">
+      <div className="flex h-14 shrink-0 items-center justify-between border-b px-4">
         <div className="flex-1 min-w-0">
           <h2 className="truncate text-sm font-semibold">
             {document?.title ?? "Loading..."}
@@ -47,8 +47,8 @@ export function PdfPanel({
               {document.type === "master"
                 ? "Master Agreement"
                 : document.type === "supplement"
-                ? "Supplement"
-                : "Rider"}
+                  ? "Supplement"
+                  : "Rider"}
             </p>
           )}
         </div>
@@ -88,11 +88,7 @@ export function PdfPanel({
             </div>
           </div>
         ) : pdfUrl ? (
-          <PdfViewer
-            url={pdfUrl}
-            initialPage={page}
-            className="h-full"
-          />
+          <PdfViewer url={pdfUrl} initialPage={page} className="h-full" />
         ) : (
           <div className="flex h-full items-center justify-center">
             <p className="text-muted-foreground">Loading document...</p>
