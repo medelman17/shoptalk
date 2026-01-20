@@ -6,6 +6,7 @@
  */
 
 import { Agent } from "@mastra/core/agent";
+import { gateway } from "ai";
 import { contractQueryTool } from "../tools/contract-query";
 
 /**
@@ -77,6 +78,6 @@ export const contractAgent = new Agent({
   id: "contract-agent",
   name: "Contract Q&A Agent",
   instructions: CONTRACT_AGENT_INSTRUCTIONS,
-  model: "anthropic/claude-sonnet-4-20250514",
+  model: gateway.languageModel("anthropic/claude-sonnet-4-20250514"),
   tools: { contractQueryTool },
 });
