@@ -44,15 +44,42 @@ function parseClassification(dbValue: string | null): string {
 }
 
 /**
- * Format the contract chain as a readable string.
+ * Contract info with both name and ID for linking.
  */
-function formatContractChain(localNumber: number | null): string[] {
+interface ContractInfo {
+  id: string;
+  name: string;
+}
+
+/**
+ * Get the contract chain with both names and IDs.
+ */
+function getContractChainInfo(localNumber: number | null): ContractInfo[] {
   if (!localNumber) {
-    return ["National Master Agreement"];
+    return [{ id: "master", name: "National Master Agreement" }];
   }
 
   const docs = getApplicableDocuments(localNumber);
-  return docs.all.map((doc) => doc.shortName);
+  return docs.all.map((doc) => ({
+    id: doc.id,
+    name: doc.shortName,
+  }));
+}
+
+/**
+ * Format the contract chain as plain text (for contractChain array).
+ */
+function formatContractChain(localNumber: number | null): string[] {
+  return getContractChainInfo(localNumber).map((c) => c.name);
+}
+
+/**
+ * Format the contract chain as clickable markdown links.
+ * Each contract links to ?doc=documentId to open the PDF viewer.
+ */
+function formatContractChainWithLinks(localNumber: number | null): string {
+  const contracts = getContractChainInfo(localNumber);
+  return contracts.map((c) => `[${c.name}](?doc=${c.id})`).join(" → ");
 }
 
 /**
@@ -73,7 +100,7 @@ export function buildUserContext(
   const local = localNumber ? getLocalByNumber(localNumber) : null;
   const localName = local ? `Teamsters Local ${local.number}` : null;
 
-  // Build formatted string
+  // Build formatted string with clickable contract links
   const parts: string[] = [];
 
   // Position line
@@ -84,8 +111,9 @@ export function buildUserContext(
     parts.push(`**Local:** ${localName}`);
   }
 
-  // Contract chain line
-  parts.push(`**Applicable Contracts:** ${contractChain.join(" → ")}`);
+  // Contract chain line with clickable links
+  const contractLinks = formatContractChainWithLinks(localNumber);
+  parts.push(`**Applicable Contracts:** ${contractLinks}`);
 
   const formatted = parts.join("\n");
 

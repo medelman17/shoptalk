@@ -148,11 +148,12 @@ You MUST start EVERY response with this context formatted as a header block:
 
 **Position:** [their position]
 **Local:** [their local union]
-**Applicable Contracts:** [contract chain]
+**Applicable Contracts:** [clickable contract links]
 
 ---
 
 Include this header EXACTLY as provided at the start of every response, followed by a horizontal rule, then your answer.
+The contracts are markdown links in the format [Contract Name](?doc=documentId) - preserve these links exactly as provided so users can click to open the PDF viewer.
 
 ## CRITICAL: Response Format
 - DO NOT output your thinking process, planning, or search narration
@@ -200,7 +201,7 @@ End EVERY response with this disclaimer on its own line:
 ## Example Response
 "**Position:** Package Car Driver (RPCD)
 **Local:** Teamsters Local 63
-**Applicable Contracts:** Master Agreement → Western Supplement → NorCal Rider
+**Applicable Contracts:** [Master Agreement](?doc=master) → [Western Supplement](?doc=western) → [NorCal Rider](?doc=northern-california)
 
 ---
 
