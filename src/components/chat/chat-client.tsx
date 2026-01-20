@@ -26,13 +26,27 @@ import { AppHeader } from "@/components/layout";
 import { usePdfPanel } from "@/contexts/pdf-panel-context";
 
 /**
- * Extract text content from UIMessage parts.
+ * Pattern to match and remove injected user context from messages.
+ * The context is added by the API for AI processing but shouldn't be displayed.
  */
-function getMessageText(message: UIMessage): string {
-  return message.parts
+const USER_CONTEXT_PATTERN = /<user_context>[\s\S]*?<\/user_context>\s*/g;
+
+/**
+ * Extract text content from UIMessage parts.
+ * Strips out any injected <user_context> blocks that shouldn't be shown to users.
+ */
+function getMessageText(message: UIMessage, stripContext = false): string {
+  let text = message.parts
     .filter((part): part is { type: "text"; text: string } => part.type === "text")
     .map((part) => part.text)
     .join("");
+
+  // Strip user context from user messages (it's injected for AI but shouldn't display)
+  if (stripContext) {
+    text = text.replace(USER_CONTEXT_PATTERN, "").trim();
+  }
+
+  return text;
 }
 
 /**
@@ -338,7 +352,8 @@ export function ChatClient({
             const isLastMessage = index === messages.length - 1;
             const isStreaming = status === "streaming" && isLastMessage;
             const toolCalls = message.role === "assistant" ? getToolCalls(message) : [];
-            const textContent = getMessageText(message);
+            // Strip injected context from user messages (it's for AI, not display)
+            const textContent = getMessageText(message, message.role === "user");
 
             return (
               <Message key={message.id} from={message.role}>
