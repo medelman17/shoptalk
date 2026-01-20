@@ -1,9 +1,10 @@
 ---
 id: task-3.3
 title: Pinecone Vector Database Setup
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-19 19:42'
+updated_date: '2026-01-20 00:51'
 labels:
   - P0
   - documents
@@ -57,3 +58,41 @@ Filter by user's document scope, then vector search within filtered results.
 - [ ] #4 Query function returns relevant results
 - [ ] #5 Metadata filtering by documentId works correctly
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+## Subtasks
+
+### 3.3.1 Install Pinecone SDK
+- `pnpm add @pinecone-database/pinecone`
+
+### 3.3.2 Create Pinecone client
+- File: `src/lib/pinecone/client.ts`
+- Configure with environment variables
+- Export typed client instance
+
+### 3.3.3 Create index setup script
+- File: `scripts/setup-pinecone.ts`
+- Index name: `shoptalk-contracts`
+- Dimension: 3072 (text-embedding-3-large)
+- Metric: cosine
+
+### 3.3.4 Define metadata schema
+- documentId (string) - for filtering by user's document scope
+- article (string)
+- section (string)
+- pageStart (number)
+- pageEnd (number)
+
+### 3.3.5 Build query utility
+- File: `src/lib/pinecone/query.ts`
+- Search with metadata filtering
+- Return top-k results with scores
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Using Mastra PineconeVector with @mastra/pinecone@1.0.0-beta.5. Index: shoptalk-contracts, 3072 dimensions.
+<!-- SECTION:NOTES:END -->

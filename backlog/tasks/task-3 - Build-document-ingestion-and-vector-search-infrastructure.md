@@ -1,9 +1,10 @@
 ---
 id: task-3
 title: Build document ingestion and vector search infrastructure
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-19 19:41'
+updated_date: '2026-01-20 00:50'
 labels:
   - P0
   - documents
@@ -42,3 +43,9 @@ The contract retrieval system needs to process 8-9 PDF documents (Master Agreeme
 - [ ] #3 PDFs accessible via Vercel Blob URLs
 - [ ] #4 Metadata filtering works by document scope
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Completed using Mastra RAG framework instead of custom implementation. Final stats: 30 documents, 4,002 vectors indexed in Pinecone.
+<!-- SECTION:NOTES:END -->

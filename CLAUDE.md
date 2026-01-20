@@ -1,7 +1,7 @@
 # ShopTalk - AI-Powered Contract Retrieval
 
 ## Quick Context
-Next.js 16 app with Mastra AI framework for building conversational agents. Uses Claude AI via Anthropic API, Clerk for authentication, and Supabase for database.
+Next.js 16 app with Mastra AI framework for building conversational agents that help UPS Teamsters understand their union contracts. Uses Claude AI via Anthropic API, Clerk for authentication, Supabase for database, and Pinecone for vector search.
 
 ## Critical Rules
 - Never use mock data as a workaround (use real API calls or proper error states)
@@ -23,6 +23,14 @@ Next.js 16 app with Mastra AI framework for building conversational agents. Uses
 - Tools go in `src/mastra/tools/`
 - Always use Zod schemas for tool inputs/outputs
 - Prefer streaming responses for user-facing agent output
+
+### RAG Pipeline (Contract Documents)
+- Document extraction in `src/lib/documents/`
+- RAG utilities in `src/lib/rag/` (processor, vector-store, tools)
+- Contract PDFs stored in `data/contracts/`
+- Uses Mastra's `MDocument` for chunking, `PineconeVector` for storage
+- Embeddings via Vercel AI Gateway (`gateway.embeddingModel()`)
+- Contract query tool created via `createContractQueryTool()` from `src/lib/rag/tools.ts`
 
 ### Authentication (Clerk)
 - Auth utilities in `src/lib/auth.ts`
@@ -54,9 +62,16 @@ src/
 ├── lib/
 │   ├── auth.ts       # Auth utilities
 │   ├── supabase/     # Supabase clients
-│   └── db/           # Data access layer
+│   ├── db/           # Data access layer
+│   ├── documents/    # PDF extraction & document manifest
+│   ├── rag/          # RAG pipeline (processor, vector-store, tools)
+│   └── union/        # Local union data & supplement mapping
 ├── mastra/           # AI agents, tools, workflows
 └── middleware.ts     # Route protection
+data/
+└── contracts/        # Contract PDF files (30 documents)
+scripts/
+└── ingest-contracts.ts  # Document ingestion CLI
 supabase/
 ├── migrations/       # Database migrations
 └── seed.sql          # Test data for local dev
@@ -76,12 +91,23 @@ pnpm db:pull            # Pull remote schema changes
 pnpm db:reset           # Reset local DB (requires Docker)
 pnpm db:status          # List migration status
 pnpm db:generate-types  # Generate TypeScript types from schema
+
+# Document Ingestion (RAG)
+pnpm tsx scripts/ingest-contracts.ts --list    # List available documents
+pnpm tsx scripts/ingest-contracts.ts --setup   # Create Pinecone index
+pnpm tsx scripts/ingest-contracts.ts --stats   # Show index statistics
+pnpm tsx scripts/ingest-contracts.ts           # Ingest all documents
+pnpm tsx scripts/ingest-contracts.ts --id <id> # Ingest single document
 ```
 
 ## Environment Variables
 ```
-# AI
-ANTHROPIC_API_KEY           # Required for Claude AI
+# AI (Vercel AI Gateway - routes to multiple providers)
+VERCEL_AI_GATEWAY_KEY       # Vercel AI Gateway key (for embeddings & LLM)
+
+# Vector Database (Pinecone)
+PINECONE_API_KEY            # Pinecone API key
+PINECONE_INDEX_NAME         # Index name (default: shoptalk-contracts)
 
 # Clerk Authentication
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY

@@ -1,36 +1,134 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ShopTalk
+
+AI-powered contract assistant for UPS Teamsters. Ask questions about your union contract and get accurate answers with citations.
+
+## Features
+
+- **Contract Q&A**: Ask questions about wages, benefits, working conditions, grievance procedures, and more
+- **Smart Retrieval**: RAG-powered search across 30+ contract documents (4,000+ indexed chunks)
+- **User Profiles**: Select your Local union and job classification to get personalized results
+- **Citation Links**: Every answer includes page references to source documents
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Framework | Next.js 16 (App Router) |
+| AI | Mastra AI Framework + Claude via Vercel AI Gateway |
+| Vector DB | Pinecone (3072-dim embeddings) |
+| Auth | Clerk |
+| Database | Supabase (PostgreSQL) |
+| Styling | Tailwind CSS v4 + shadcn/ui |
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 20+
+- pnpm
+- Vercel account (for AI Gateway)
+- Pinecone account
+- Clerk account
+- Supabase project
+
+### Installation
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Clone the repository
+git clone https://github.com/medelman17/shoptalk.git
+cd shoptalk
+
+# Install dependencies
+pnpm install
+
+# Copy environment variables
+cp .env.example .env.local
+# Edit .env.local with your keys
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Vercel AI Gateway
+VERCEL_AI_GATEWAY_KEY=
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Pinecone Vector Database
+PINECONE_API_KEY=
+PINECONE_INDEX_NAME=shoptalk-contracts
 
-## Learn More
+# Clerk Authentication
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+CLERK_SECRET_KEY=
+CLERK_WEBHOOK_SECRET=
 
-To learn more about Next.js, take a look at the following resources:
+# Supabase Database
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Document Ingestion
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Contract PDFs are stored in `data/contracts/`. To ingest documents into Pinecone:
 
-## Deploy on Vercel
+```bash
+# Create the Pinecone index
+pnpm tsx scripts/ingest-contracts.ts --setup
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Ingest all documents
+pnpm tsx scripts/ingest-contracts.ts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Check index statistics
+pnpm tsx scripts/ingest-contracts.ts --stats
+```
+
+### Development
+
+```bash
+# Start dev server
+pnpm dev
+
+# Type checking
+pnpm type-check
+
+# Linting
+pnpm lint
+
+# Production build
+pnpm build
+```
+
+## Architecture
+
+```
+src/
+├── app/              # Next.js App Router pages
+├── components/       # React components (ui/, ai-elements/)
+├── lib/
+│   ├── auth.ts       # Clerk utilities
+│   ├── db/           # Database access layer
+│   ├── documents/    # PDF extraction
+│   ├── rag/          # RAG pipeline (processor, vector-store, tools)
+│   ├── supabase/     # Supabase clients
+│   └── union/        # Local union data & supplement mapping
+├── mastra/           # AI agents, tools, workflows
+└── middleware.ts     # Route protection
+
+data/contracts/       # Contract PDF files
+scripts/              # CLI tools (ingestion, etc.)
+supabase/migrations/  # Database migrations
+```
+
+## Contract Documents
+
+The system indexes 30 UPS Teamster contract documents:
+
+- **National Master Agreement** - Applies to all workers
+- **Regional Supplements** - Western, Central, Southern, Atlantic, Eastern, New England
+- **Local Agreements** - Local 804, Local 243, NorCal, SoCal, etc.
+- **Riders** - JC3, JC28, JC37, SW Package, etc.
+- **Specialty** - Automotive, Cartage, Trailer Conditioners
+
+## License
+
+Private - All rights reserved.

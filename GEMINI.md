@@ -82,14 +82,34 @@ The project is a modern full-stack application built on the Vercel and Next.js e
 | **Language** | TypeScript | v5 (Strict Mode) |
 | **Styling** | Tailwind CSS | v4 |
 | **UI Components** | shadcn/ui | Accessible component primitives |
+| **AI Framework** | Mastra | Agent framework with RAG support |
 | **Hosting** | Vercel | Edge functions, serverless compute |
 | **Authentication**| Clerk | Magic link authentication |
 | **User Database** | Supabase | Managed Postgres for user profiles and query history |
-| **Vector DB** | Pinecone | For similarity search on contract embeddings |
-| **Embeddings** | OpenAI | `text-embedding-3-large` for creating vector embeddings |
-| **LLM** | Anthropic | `Claude 3.5 Sonnet` for response generation |
+| **Vector DB** | Pinecone | For similarity search on contract embeddings (3072 dimensions) |
+| **Embeddings** | Vercel AI Gateway | Routes to `openai/text-embedding-3-large` |
+| **LLM** | Anthropic | `Claude` via Vercel AI Gateway |
 | **File Storage**| Vercel Blob | For storing and serving PDF contract documents |
 | **PDF Viewer** | react-pdf | For client-side PDF rendering |
+
+### RAG Pipeline (Implemented)
+
+The document ingestion and retrieval pipeline is fully operational:
+
+| Component | Technology | Location |
+|---|---|---|
+| PDF Extraction | pdf-parse | `src/lib/documents/extract.ts` |
+| Document Manifest | TypeScript config | `src/lib/documents/manifest.ts` |
+| Chunking | Mastra MDocument | `src/lib/rag/processor.ts` |
+| Vector Store | Mastra PineconeVector | `src/lib/rag/vector-store.ts` |
+| Embeddings | Vercel AI Gateway | `gateway.embeddingModel()` |
+| Query Tool | Mastra createVectorQueryTool | `src/lib/rag/tools.ts` |
+
+**Current Index Statistics:**
+- Documents: 30 UPS Teamster contract PDFs
+- Vectors: 4,002 chunks
+- Embedding Model: `openai/text-embedding-3-large` (3072 dimensions)
+- Index Name: `shoptalk-contracts`
 
 ## Building and Running
 
@@ -149,6 +169,35 @@ The project uses Supabase for the user database. The local development environme
     pnpm db:reset    # Reset the local database and apply migrations + seed data
     ```
 
+### Document Ingestion Commands
+
+The RAG pipeline includes a CLI for managing contract document ingestion:
+
+*   **List available documents:**
+    ```bash
+    pnpm tsx scripts/ingest-contracts.ts --list
+    ```
+
+*   **Setup Pinecone index:**
+    ```bash
+    pnpm tsx scripts/ingest-contracts.ts --setup
+    ```
+
+*   **Ingest all documents:**
+    ```bash
+    pnpm tsx scripts/ingest-contracts.ts
+    ```
+
+*   **Ingest a single document:**
+    ```bash
+    pnpm tsx scripts/ingest-contracts.ts --id master
+    ```
+
+*   **Show index statistics:**
+    ```bash
+    pnpm tsx scripts/ingest-contracts.ts --stats
+    ```
+
 ## Development Conventions
 
 *   **Code Style:** The project uses ESLint for code linting. Adhere to the existing rules and formatting.
@@ -158,3 +207,32 @@ The project uses Supabase for the user database. The local development environme
 *   **Type Safety:** The project uses TypeScript in strict mode. Ensure all new code is strongly typed. Database types are generated, not written manually.
 *   **State Management:** State is primarily managed using React server components and client component state. There is no global state management library.
 *   **Path Aliases:** The project uses the alias `@/*` to refer to the `src/` directory for cleaner import paths.
+
+<!-- BACKLOG.MD MCP GUIDELINES START -->
+
+<CRITICAL_INSTRUCTION>
+
+## BACKLOG WORKFLOW INSTRUCTIONS
+
+This project uses Backlog.md MCP for all task and project management activities.
+
+**CRITICAL GUIDANCE**
+
+- If your client supports MCP resources, read `backlog://workflow/overview` to understand when and how to use Backlog for this project.
+- If your client only supports tools or the above request fails, call `backlog.get_workflow_overview()` tool to load the tool-oriented overview (it lists the matching guide tools).
+
+- **First time working here?** Read the overview resource IMMEDIATELY to learn the workflow
+- **Already familiar?** You should have the overview cached ("## Backlog.md Overview (MCP)")
+- **When to read it**: BEFORE creating tasks, or when you're unsure whether to track work
+
+These guides cover:
+- Decision framework for when to create tasks
+- Search-first workflow to avoid duplicates
+- Links to detailed guides for task creation, execution, and completion
+- MCP tools reference
+
+You MUST read the overview resource to understand the complete workflow. The information is NOT summarized here.
+
+</CRITICAL_INSTRUCTION>
+
+<!-- BACKLOG.MD MCP GUIDELINES END -->

@@ -1,9 +1,10 @@
 ---
 id: task-3.2
 title: Document Chunking Pipeline
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-01-19 19:42'
+updated_date: '2026-01-20 00:51'
 labels:
   - P0
   - documents
@@ -65,3 +66,40 @@ interface DocumentChunk {
 - [ ] #4 Chunking script processes all documents
 - [ ] #5 Output format compatible with embedding pipeline
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+## Subtasks
+
+### 3.2.1 Design chunking configuration
+- Target: 300-500 tokens per chunk
+- Overlap: 50 tokens
+- Preserve article/section boundaries
+
+### 3.2.2 Build tokenizer utility
+- Use tiktoken or simple word-based estimation
+- Function to count tokens in text
+
+### 3.2.3 Build chunking logic
+- File: `src/lib/documents/chunk.ts`
+- Split on section boundaries when possible
+- Never break mid-sentence
+- Extract metadata (article, section, page range)
+
+### 3.2.4 Create chunking CLI script
+- File: `scripts/chunk-documents.ts`
+- Read from `data/extracted/`
+- Output: `data/chunks/<doc-id>.json`
+
+### 3.2.5 Validate chunk quality
+- Check token counts are in range
+- Verify metadata completeness
+- Spot-check content coherence
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented using Mastra MDocument.chunk() with recursive strategy. 4,002 chunks generated with avg 270 tokens.
+<!-- SECTION:NOTES:END -->

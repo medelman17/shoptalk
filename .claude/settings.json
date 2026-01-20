@@ -50,12 +50,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.file_path' | xargs -I {} sh -c 'case \"{}\" in *.ts|*.tsx|*.js|*.jsx) pnpm prettier --write \"{}\" 2>/dev/null ;; esac'",
+            "command": "jq -r '.tool_input.file_path' | xargs -I {} sh -c 'case \"{}\" in *.ts|*.tsx|*.js|*.jsx) npx prettier --write \"{}\" 2>/dev/null ;; esac'",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "jq -r '.tool_input.file_path' | grep -qE 'src/.*[.](ts|tsx)$' && pnpm tsc --noEmit 2>&1 | head -30 || true",
+            "command": "jq -r '.tool_input.file_path' | grep -qE 'src/.*[.](ts|tsx)$' && npx tsc --noEmit 2>&1 | head -30 || true",
             "timeout": 30
           }
         ]
