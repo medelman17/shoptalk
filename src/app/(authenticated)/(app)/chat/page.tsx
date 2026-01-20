@@ -2,7 +2,8 @@
 
 import { useChat, Chat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { useRef, useEffect, useState, useMemo } from "react";
+import { useRef, useEffect, useState, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import type { UIMessage } from "ai";
 import {
   PromptInput,
@@ -17,6 +18,11 @@ import {
 import { MessageWithCitations } from "@/components/ai-elements/message-with-citations";
 import { Loader } from "@/components/ai-elements/loader";
 import type { Citation } from "@/lib/citations";
+import { parseCitations } from "@/lib/citations";
+import { incrementQueryCount } from "@/lib/pwa/query-counter";
+import { CharacterCounter, QUERY_MAX_LENGTH } from "@/components/chat";
+import { ErrorDisplay } from "@/components/ui/error-display";
+import { createAppError } from "@/lib/errors";
 
 /**
  * Extract text content from UIMessage parts.
@@ -37,6 +43,11 @@ function getMessageText(message: UIMessage): string {
 export default function ChatPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [input, setInput] = useState("");
+  const router = useRouter();
+
+  // Track current query ID for saving answers
+  const [currentQueryId, setCurrentQueryId] = useState<string | null>(null);
+  const pendingQuestionRef = useRef<string | null>(null);
 
   // Create the chat instance with the API transport
   const chat = useMemo(
@@ -49,7 +60,54 @@ export default function ChatPage() {
     []
   );
 
+  // Save query to history when response completes
+  const saveAnswer = useCallback(
+    async (answerText: string) => {
+      const queryId = currentQueryId;
+      if (!queryId) return;
+
+      try {
+        // Parse citations from the answer
+        const parseResult = parseCitations(answerText);
+        const citations = parseResult.citations.map((c) => ({
+          source: c.documentId,
+          text: c.raw,
+          page: c.page,
+          section: c.section,
+        }));
+
+        // Update query with answer
+        await fetch(`/api/queries/${queryId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ answer: answerText, citations }),
+        });
+      } catch (error) {
+        console.error("Failed to save query answer:", error);
+      } finally {
+        setCurrentQueryId(null);
+      }
+    },
+    [currentQueryId]
+  );
+
   const { messages, sendMessage, status, error } = useChat({ chat });
+
+  // Save answer when streaming completes
+  useEffect(() => {
+    if (status === "ready" && messages.length > 0 && currentQueryId) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage?.role === "assistant") {
+        const answerText = lastMessage.parts
+          .filter((part): part is { type: "text"; text: string } => part.type === "text")
+          .map((part) => part.text)
+          .join("");
+        if (answerText) {
+          saveAnswer(answerText);
+        }
+      }
+    }
+  }, [status, messages, currentQueryId, saveAnswer]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -61,21 +119,65 @@ export default function ChatPage() {
   const isLoading = status === "submitted" || status === "streaming";
 
   const handleSubmit = async () => {
-    if (!input.trim() || isLoading) return;
-    const text = input;
+    const text = input.trim();
+
+    // Validate input
+    if (!text || isLoading) return;
+    if (text.length > QUERY_MAX_LENGTH) return;
     setInput("");
+    pendingQuestionRef.current = text;
+
+    try {
+      // Save query to history (question only)
+      const response = await fetch("/api/queries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: text }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCurrentQueryId(data.query.id);
+        // Track query count for PWA install prompt
+        incrementQueryCount();
+      }
+    } catch (error) {
+      console.error("Failed to save query:", error);
+    }
+
+    // Send message regardless of save success
     await sendMessage({ text });
   };
 
   const handleCitationClick = (citation: Citation) => {
-    // Future: Could open a modal with the full source text
-    // or navigate to a document viewer
-    console.log("Citation clicked:", citation);
+    // Navigate to PDF viewer with page number if available
+    const pageParam = citation.page ? `?page=${citation.page}` : "";
+    router.push(`/pdf/${citation.documentId}${pageParam}`);
   };
 
   const handleSuggestedQuestion = async (question: string) => {
     if (isLoading) return;
     setInput("");
+    pendingQuestionRef.current = question;
+
+    try {
+      // Save query to history (question only)
+      const response = await fetch("/api/queries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCurrentQueryId(data.query.id);
+        // Track query count for PWA install prompt
+        incrementQueryCount();
+      }
+    } catch (error) {
+      console.error("Failed to save query:", error);
+    }
+
     await sendMessage({ text: question });
   };
 
@@ -176,11 +278,17 @@ export default function ChatPage() {
 
           {/* Error display */}
           {error && (
-            <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-              <p className="text-sm text-destructive">
-                Something went wrong. Please try again.
-              </p>
-            </div>
+            <ErrorDisplay
+              error={createAppError(error, {
+                onRetry: () => {
+                  // Retry the last question if available
+                  const lastQuestion = pendingQuestionRef.current;
+                  if (lastQuestion) {
+                    sendMessage({ text: lastQuestion });
+                  }
+                },
+              })}
+            />
           )}
         </div>
       </div>
@@ -196,14 +304,18 @@ export default function ChatPage() {
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask about your contract..."
               disabled={isLoading}
+              maxLength={QUERY_MAX_LENGTH + 50} // Allow slight overflow for UX
             />
             <PromptInputFooter>
-              <div className="text-xs text-muted-foreground">
-                Press Enter to send
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-muted-foreground">
+                  Press Enter to send
+                </span>
+                <CharacterCounter current={input.length} max={QUERY_MAX_LENGTH} />
               </div>
               <PromptInputSubmit
                 status={status}
-                disabled={isLoading || !input.trim()}
+                disabled={isLoading || !input.trim() || input.length > QUERY_MAX_LENGTH}
               />
             </PromptInputFooter>
           </PromptInput>

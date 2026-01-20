@@ -9,8 +9,45 @@
 import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
 import { gateway } from "ai";
-import { querySimilar } from "@/lib/rag/vector-store";
+import { querySimilar, getVectorStore, VECTOR_CONFIG } from "@/lib/rag/vector-store";
 import type { ContractChunkMetadata } from "@/lib/rag/processor";
+
+/**
+ * Structured logging for contract query operations.
+ */
+function logContractQuery(
+  level: "info" | "warn" | "error",
+  step: string,
+  data: Record<string, unknown>
+) {
+  const timestamp = new Date().toISOString();
+  const prefix = `[ContractQuery:${step}]`;
+  const message = { timestamp, ...data };
+
+  if (level === "error") {
+    console.error(prefix, JSON.stringify(message));
+  } else if (level === "warn") {
+    console.warn(prefix, JSON.stringify(message));
+  } else {
+    console.log(prefix, JSON.stringify(message));
+  }
+}
+
+/**
+ * Check required environment variables and return status.
+ */
+function checkEnvironment(): { valid: boolean; missing: string[] } {
+  const required = [
+    { name: "PINECONE_API_KEY", value: process.env.PINECONE_API_KEY },
+    { name: "VERCEL_AI_GATEWAY_KEY", value: process.env.VERCEL_AI_GATEWAY_KEY },
+  ];
+
+  const missing = required
+    .filter(({ value }) => !value)
+    .map(({ name }) => name);
+
+  return { valid: missing.length === 0, missing };
+}
 
 /**
  * Result from a contract query.
@@ -36,11 +73,46 @@ export interface ContractQueryResult {
 
 /**
  * Generate embedding for a query using the Vercel AI Gateway.
+ *
+ * @throws Error with detailed message if embedding fails
  */
 async function embedQuery(query: string): Promise<number[]> {
-  const model = gateway.embeddingModel("openai/text-embedding-3-large");
-  const result = await model.doEmbed({ values: [query] });
-  return result.embeddings[0];
+  const startTime = Date.now();
+
+  logContractQuery("info", "embed-start", {
+    queryLength: query.length,
+    model: "openai/text-embedding-3-large",
+  });
+
+  try {
+    const model = gateway.embeddingModel("openai/text-embedding-3-large");
+    const result = await model.doEmbed({ values: [query] });
+
+    const duration = Date.now() - startTime;
+    logContractQuery("info", "embed-success", {
+      duration,
+      embeddingDimension: result.embeddings[0]?.length ?? 0,
+    });
+
+    if (!result.embeddings[0] || result.embeddings[0].length === 0) {
+      throw new Error("Embedding result was empty");
+    }
+
+    return result.embeddings[0];
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+
+    logContractQuery("error", "embed-failed", {
+      duration,
+      error: errorMessage,
+      stack: errorStack,
+      gatewayKeyPresent: !!process.env.VERCEL_AI_GATEWAY_KEY,
+    });
+
+    throw new Error(`Embedding generation failed: ${errorMessage}`);
+  }
 }
 
 /**
@@ -82,44 +154,148 @@ export const contractQueryTool = createTool({
     totalResults: z.number(),
   }),
   execute: async ({ query, topK = 5 }, context) => {
-    // Extract document scope from request context
-    // RequestContext uses a Map-like interface with get/set methods
+    const startTime = Date.now();
+    const requestId = Math.random().toString(36).substring(7);
+
+    logContractQuery("info", "execute-start", {
+      requestId,
+      query: query.substring(0, 100), // Truncate for logging
+      topK,
+    });
+
+    // Step 1: Check environment variables
+    const envCheck = checkEnvironment();
+    if (!envCheck.valid) {
+      logContractQuery("error", "env-check-failed", {
+        requestId,
+        missing: envCheck.missing,
+      });
+      throw new Error(
+        `Missing required environment variables: ${envCheck.missing.join(", ")}`
+      );
+    }
+
+    // Step 2: Extract document scope from request context
     const requestContext = context?.requestContext;
     const documentIds = requestContext?.get("documentIds") as string[] | undefined;
 
     if (!documentIds || documentIds.length === 0) {
-      console.warn("No document scope provided in requestContext, defaulting to master only");
+      logContractQuery("warn", "no-document-scope", {
+        requestId,
+        defaultScope: ["master"],
+      });
+    } else {
+      logContractQuery("info", "document-scope", {
+        requestId,
+        documentIds,
+      });
     }
 
-    // Generate embedding for the query
-    const queryVector = await embedQuery(query);
+    const effectiveDocumentIds = documentIds?.length ? documentIds : ["master"];
 
-    // Query Pinecone with scope filtering
-    const results = await querySimilar(queryVector, {
-      topK,
-      documentIds: documentIds?.length ? documentIds : ["master"],
-    });
+    try {
+      // Step 3: Verify Pinecone connection
+      logContractQuery("info", "pinecone-check-start", {
+        requestId,
+        indexName: VECTOR_CONFIG.indexName,
+      });
 
-    // Transform results for agent consumption
-    const formattedResults: ContractQueryResult[] = results.map((result) => {
-      const metadata = result.metadata as ContractChunkMetadata;
+      try {
+        const store = getVectorStore();
+        const indexes = await store.listIndexes();
+
+        if (!indexes.includes(VECTOR_CONFIG.indexName)) {
+          logContractQuery("error", "index-not-found", {
+            requestId,
+            indexName: VECTOR_CONFIG.indexName,
+            availableIndexes: indexes,
+          });
+          throw new Error(
+            `Pinecone index "${VECTOR_CONFIG.indexName}" not found. Available: ${indexes.join(", ") || "none"}`
+          );
+        }
+
+        logContractQuery("info", "pinecone-check-success", {
+          requestId,
+          indexName: VECTOR_CONFIG.indexName,
+        });
+      } catch (error) {
+        if (error instanceof Error && error.message.includes("not found")) {
+          throw error; // Re-throw index not found error
+        }
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logContractQuery("error", "pinecone-connection-failed", {
+          requestId,
+          error: errorMessage,
+        });
+        throw new Error(`Failed to connect to Pinecone: ${errorMessage}`);
+      }
+
+      // Step 4: Generate embedding for the query
+      const queryVector = await embedQuery(query);
+
+      // Step 5: Query Pinecone with scope filtering
+      logContractQuery("info", "query-start", {
+        requestId,
+        topK,
+        documentIds: effectiveDocumentIds,
+      });
+
+      const queryStartTime = Date.now();
+      const results = await querySimilar(queryVector, {
+        topK,
+        documentIds: effectiveDocumentIds,
+      });
+
+      logContractQuery("info", "query-success", {
+        requestId,
+        duration: Date.now() - queryStartTime,
+        resultCount: results.length,
+        topScores: results.slice(0, 3).map((r) => r.score.toFixed(3)),
+      });
+
+      // Step 6: Transform results for agent consumption
+      const formattedResults: ContractQueryResult[] = results.map((result) => {
+        const metadata = result.metadata as ContractChunkMetadata;
+        return {
+          text: metadata.text || "",
+          documentId: metadata.documentId,
+          documentTitle: metadata.documentTitle,
+          article: metadata.article || "",
+          section: metadata.section || "",
+          pageStart: metadata.pageStart,
+          pageEnd: metadata.pageEnd,
+          score: result.score,
+        };
+      });
+
+      const totalDuration = Date.now() - startTime;
+      logContractQuery("info", "execute-complete", {
+        requestId,
+        totalDuration,
+        resultCount: formattedResults.length,
+      });
+
       return {
-        text: metadata.text || "",
-        documentId: metadata.documentId,
-        documentTitle: metadata.documentTitle,
-        article: metadata.article || "",
-        section: metadata.section || "",
-        pageStart: metadata.pageStart,
-        pageEnd: metadata.pageEnd,
-        score: result.score,
+        results: formattedResults,
+        query,
+        totalResults: formattedResults.length,
       };
-    });
+    } catch (error) {
+      const totalDuration = Date.now() - startTime;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
 
-    return {
-      results: formattedResults,
-      query,
-      totalResults: formattedResults.length,
-    };
+      logContractQuery("error", "execute-failed", {
+        requestId,
+        totalDuration,
+        error: errorMessage,
+        stack: errorStack,
+      });
+
+      // Re-throw with context for agent to handle gracefully
+      throw new Error(`Contract query failed: ${errorMessage}`);
+    }
   },
 });
 

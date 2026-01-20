@@ -18,6 +18,7 @@
   "dependencies": {
     "@ai-sdk/react": "^3.0.43",
     "@clerk/nextjs": "^6.36.8",
+    "@ducanh2912/next-pwa": "^10.2.9",
     "@mastra/ai-sdk": "1.0.0-beta.15",
     "@mastra/core": "1.0.0-beta.24",
     "@mastra/libsql": "1.0.0-beta.12",
@@ -48,6 +49,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
     "lucide-react": "^0.562.0",
     "mastra": "1.0.0-beta.16",
@@ -58,6 +60,7 @@
     "pdf-parse": "1.1.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-pdf": "^10.3.0",
     "shiki": "^3.21.0",
     "streamdown": "^2.1.0",
     "svix": "^1.84.1",
