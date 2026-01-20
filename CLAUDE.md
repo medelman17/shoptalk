@@ -30,7 +30,17 @@ Next.js 16 app with Mastra AI framework for building conversational agents that 
 - Contract PDFs stored in `data/contracts/`
 - Uses Mastra's `MDocument` for chunking, `PineconeVector` for storage
 - Embeddings via Vercel AI Gateway (`gateway.embeddingModel()`)
-- Contract query tool created via `createContractQueryTool()` from `src/lib/rag/tools.ts`
+- Contract query tool in `src/mastra/tools/contract-query.ts`
+
+### Chat System (Contract Q&A)
+- Chat API route at `src/app/api/chat/route.ts`
+- Contract agent in `src/mastra/agents/contract-agent.ts`
+- Citation parsing in `src/lib/citations/` (types, parser, index)
+- Citation UI components in `src/components/ai-elements/`:
+  - `contract-citation.tsx` - Clickable badge with hover card
+  - `message-with-citations.tsx` - Parse and render inline citations
+- Citation format: `[Doc: {documentId}, Art: {article}, Sec: {section}, Page: {page}]`
+- Uses AI SDK v6 with `useChat` hook and `DefaultChatTransport`
 
 ### Authentication (Clerk)
 - Auth utilities in `src/lib/auth.ts`
@@ -53,28 +63,39 @@ Next.js 16 app with Mastra AI framework for building conversational agents that 
 
 ```
 src/
-├── app/              # Next.js routes (App Router)
-│   ├── (auth)/       # Auth pages (sign-in, sign-up)
-│   └── api/webhooks/ # Webhook handlers
+├── app/                      # Next.js routes (App Router)
+│   ├── (auth)/               # Auth pages (sign-in, sign-up)
+│   ├── (authenticated)/      # Protected routes
+│   │   ├── (app)/            # Routes requiring completed onboarding
+│   │   │   ├── chat/         # Contract Q&A chat interface
+│   │   │   └── settings/     # User settings
+│   │   └── onboarding/       # User onboarding flow
+│   └── api/
+│       ├── chat/             # Streaming chat endpoint
+│       └── webhooks/         # Webhook handlers
 ├── components/
-│   ├── ui/           # Reusable UI primitives
-│   └── ai-elements/  # AI output visualizations
+│   ├── ui/                   # Reusable UI primitives
+│   └── ai-elements/          # AI output visualizations (citations, messages)
 ├── lib/
-│   ├── auth.ts       # Auth utilities
-│   ├── supabase/     # Supabase clients
-│   ├── db/           # Data access layer
-│   ├── documents/    # PDF extraction & document manifest
-│   ├── rag/          # RAG pipeline (processor, vector-store, tools)
-│   └── union/        # Local union data & supplement mapping
-├── mastra/           # AI agents, tools, workflows
-└── middleware.ts     # Route protection
+│   ├── auth.ts               # Auth utilities
+│   ├── citations/            # Citation parsing and types
+│   ├── supabase/             # Supabase clients
+│   ├── db/                   # Data access layer
+│   ├── documents/            # PDF extraction & document manifest
+│   ├── rag/                  # RAG pipeline (processor, vector-store)
+│   └── union/                # Local union data & supplement mapping
+├── mastra/
+│   ├── agents/               # AI agents (contract-agent)
+│   ├── tools/                # Agent tools (contract-query)
+│   └── workflows/            # AI workflows
+└── middleware.ts             # Route protection
 data/
-└── contracts/        # Contract PDF files (30 documents)
+└── contracts/                # Contract PDF files (30 documents)
 scripts/
-└── ingest-contracts.ts  # Document ingestion CLI
+└── ingest-contracts.ts       # Document ingestion CLI
 supabase/
-├── migrations/       # Database migrations
-└── seed.sql          # Test data for local dev
+├── migrations/               # Database migrations
+└── seed.sql                  # Test data for local dev
 ```
 
 ## Commands

@@ -87,6 +87,6 @@ export async function submitOnboarding(
     };
   }
 
-  // Redirect to main app (must be outside try/catch - redirect() throws)
-  redirect("/");
+  // Redirect to chat (must be outside try/catch - redirect() throws)
+  redirect("/chat");
 }
