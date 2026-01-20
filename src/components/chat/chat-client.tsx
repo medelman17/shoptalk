@@ -112,7 +112,7 @@ function dbMessagesToUIMessages(messages: DbMessage[]): UIMessage[] {
 }
 
 interface ChatClientProps {
-  conversationId: string;
+  conversationId?: string; // Optional for new chats - will be created lazily
   conversationTitle?: string | null;
   initialMessages?: DbMessage[];
 }
@@ -141,6 +141,15 @@ export function ChatClient({
   const [pendingMessageId, setPendingMessageId] = useState<string | null>(null);
   const pendingQuestionRef = useRef<string | null>(null);
 
+  // Track current conversation ID (may be set lazily on first message)
+  const [currentConversationId, setCurrentConversationId] = useState<string | undefined>(conversationId);
+  const conversationIdRef = useRef<string | undefined>(conversationId);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    conversationIdRef.current = currentConversationId;
+  }, [currentConversationId]);
+
   // Convert initial DB messages to UIMessage format
   const initialUIMessages = useMemo(
     () => dbMessagesToUIMessages(initialMessages),
@@ -148,16 +157,17 @@ export function ChatClient({
   );
 
   // Create the chat instance with the API transport and initial messages
+  // Use a body function so it reads the current conversationId from the ref
   const chat = useMemo(
     () =>
       new Chat({
         transport: new DefaultChatTransport({
           api: "/api/chat",
-          body: { conversationId },
+          body: () => ({ conversationId: conversationIdRef.current }),
         }),
         messages: initialUIMessages,
       }),
-    [conversationId, initialUIMessages]
+    [initialUIMessages]
   );
 
   const { messages, sendMessage, status, error } = useChat({ chat });
@@ -165,6 +175,9 @@ export function ChatClient({
   // Save assistant message when streaming completes
   const saveAssistantMessage = useCallback(
     async (answerText: string) => {
+      // Don't save without a conversation
+      if (!currentConversationId) return;
+
       try {
         // Parse citations from the answer
         const parseResult = parseCitations(answerText);
@@ -176,7 +189,7 @@ export function ChatClient({
         }));
 
         // Save assistant message to conversation
-        await fetch(`/api/conversations/${conversationId}/messages`, {
+        await fetch(`/api/conversations/${currentConversationId}/messages`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -194,7 +207,7 @@ export function ChatClient({
         setPendingMessageId(null);
       }
     },
-    [conversationId, router]
+    [currentConversationId, router]
   );
 
   // Save answer when streaming completes
@@ -228,22 +241,54 @@ export function ChatClient({
     setInput("");
     pendingQuestionRef.current = text;
 
-    try {
-      // Save user message to conversation
-      const response = await fetch(`/api/conversations/${conversationId}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: "user", content: text }),
-      });
+    let convId = currentConversationId;
 
-      if (response.ok) {
+    // Create conversation if this is the first message
+    if (!convId) {
+      try {
+        const response = await fetch("/api/conversations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ initialMessage: text }),
+        });
+        if (!response.ok) throw new Error("Failed to create conversation");
+
         const data = await response.json();
-        setPendingMessageId(data.message.id);
+        convId = data.conversation.id;
+        setCurrentConversationId(convId);
+
+        // Update URL without page reload
+        router.replace(`/chat/${convId}`, { scroll: false });
+
         // Track query count for PWA install prompt
         incrementQueryCount();
+
+        // Set pending message ID for assistant response save
+        if (data.message) {
+          setPendingMessageId(data.message.id);
+        }
+      } catch (error) {
+        console.error("Failed to create conversation:", error);
+        // Still send message to get AI response, even if save failed
       }
-    } catch (error) {
-      console.error("Failed to save user message:", error);
+    } else {
+      // Existing conversation - save user message
+      try {
+        const response = await fetch(`/api/conversations/${convId}/messages`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: "user", content: text }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setPendingMessageId(data.message.id);
+          // Track query count for PWA install prompt
+          incrementQueryCount();
+        }
+      } catch (error) {
+        console.error("Failed to save user message:", error);
+      }
     }
 
     // Send message regardless of save success
@@ -260,22 +305,53 @@ export function ChatClient({
     setInput("");
     pendingQuestionRef.current = question;
 
-    try {
-      // Save user message to conversation
-      const response = await fetch(`/api/conversations/${conversationId}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: "user", content: question }),
-      });
+    let convId = currentConversationId;
 
-      if (response.ok) {
+    // Create conversation if this is the first message
+    if (!convId) {
+      try {
+        const response = await fetch("/api/conversations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ initialMessage: question }),
+        });
+        if (!response.ok) throw new Error("Failed to create conversation");
+
         const data = await response.json();
-        setPendingMessageId(data.message.id);
+        convId = data.conversation.id;
+        setCurrentConversationId(convId);
+
+        // Update URL without page reload
+        router.replace(`/chat/${convId}`, { scroll: false });
+
         // Track query count for PWA install prompt
         incrementQueryCount();
+
+        // Set pending message ID for assistant response save
+        if (data.message) {
+          setPendingMessageId(data.message.id);
+        }
+      } catch (error) {
+        console.error("Failed to create conversation:", error);
       }
-    } catch (error) {
-      console.error("Failed to save user message:", error);
+    } else {
+      // Existing conversation - save user message
+      try {
+        const response = await fetch(`/api/conversations/${convId}/messages`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: "user", content: question }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setPendingMessageId(data.message.id);
+          // Track query count for PWA install prompt
+          incrementQueryCount();
+        }
+      } catch (error) {
+        console.error("Failed to save user message:", error);
+      }
     }
 
     await sendMessage({ text: question });

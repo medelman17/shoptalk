@@ -90,11 +90,12 @@ export async function POST(request: NextRequest) {
     const conversation = await createConversation(profile.id, conversationTitle);
 
     // 6. Add initial message if provided
+    let savedMessage = null;
     if (initialMessage && typeof initialMessage === "string") {
-      await addMessage(conversation.id, "user", initialMessage.trim());
+      savedMessage = await addMessage(conversation.id, "user", initialMessage.trim());
     }
 
-    return NextResponse.json({ conversation }, { status: 201 });
+    return NextResponse.json({ conversation, message: savedMessage }, { status: 201 });
   } catch (error) {
     console.error("POST /api/conversations error:", error);
     return NextResponse.json(
