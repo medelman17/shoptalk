@@ -17,6 +17,7 @@ import type {
   FootnoteParseResult,
   FootnoteSegment,
   UniqueSource,
+  MarkdownFootnotesResult,
 } from "./types";
 
 /**
@@ -243,34 +244,47 @@ function getDocumentName(documentId: string): string {
  * Converts `[Doc: master, Art: 6, Page: 45]` into `[^1]` inline,
  * with footnote definitions appended at the end.
  *
+ * Handles punctuation correctly: `text[Doc: ...]."` becomes `text."[^1]`
+ *
  * @param text - Text with citation markers
  * @returns Markdown text with native footnotes
  */
 export function transformToMarkdownFootnotes(text: string): string {
   const sourceMap = new Map<string, { number: number; citation: Citation }>();
-  const regex = new RegExp(CITATION_REGEX.source, "g");
   let nextNumber = 1;
 
+  // Regex that captures the citation AND any trailing punctuation
+  // This lets us move punctuation before the footnote marker
+  const citationWithPunctuation =
+    /\[Doc:\s*([a-zA-Z0-9-]+)(?:,\s*Art:\s*([a-zA-Z0-9.]+))?(?:,\s*Sec:\s*([a-zA-Z0-9.]+))?(?:,\s*Page:\s*(\d+))?\]([.,;:!?])?/g;
+
   // Replace citations with footnote references
-  const transformed = text.replace(regex, (match) => {
-    // Parse the citation from the match
-    const citationRegex = new RegExp(CITATION_REGEX.source);
-    const parsed = citationRegex.exec(match);
-    if (!parsed) return match;
+  const transformed = text.replace(
+    citationWithPunctuation,
+    (match, documentId, article, section, pageStr, punctuation) => {
+      const citation: Citation = {
+        documentId,
+        article: article || undefined,
+        section: section || undefined,
+        page: pageStr ? parseInt(pageStr, 10) : undefined,
+        raw: match,
+      };
 
-    const citation = parseCitationMatch(parsed);
-    const key = getCitationKey(citation);
+      const key = getCitationKey(citation);
 
-    let source = sourceMap.get(key);
-    if (!source) {
-      source = { number: nextNumber++, citation };
-      sourceMap.set(key, source);
-    } else if (citation.page && !source.citation.page) {
-      source.citation.page = citation.page;
-    }
+      let source = sourceMap.get(key);
+      if (!source) {
+        source = { number: nextNumber++, citation };
+        sourceMap.set(key, source);
+      } else if (citation.page && !source.citation.page) {
+        source.citation.page = citation.page;
+      }
 
-    return `[^${source.number}]`;
-  });
+      // Put punctuation BEFORE the footnote marker
+      const punct = punctuation || "";
+      return `${punct}[^${source.number}]`;
+    },
+  );
 
   // If no citations, return original
   if (sourceMap.size === 0) {
@@ -297,6 +311,81 @@ export function transformToMarkdownFootnotes(text: string): string {
     .join("\n");
 
   return `${transformed}\n\n${footnotes}`;
+}
+
+/**
+ * Transform citations to markdown footnotes and return citation map.
+ *
+ * Same as transformToMarkdownFootnotes but also returns a map of
+ * footnote numbers to citation data, useful for click handling.
+ *
+ * @param text - Text with citation markers
+ * @returns Object with markdown string and citation map
+ */
+export function transformToMarkdownFootnotesWithMap(
+  text: string,
+): MarkdownFootnotesResult {
+  const sourceMap = new Map<string, { number: number; citation: Citation }>();
+  const citationMap = new Map<number, Citation>();
+  let nextNumber = 1;
+
+  const citationWithPunctuation =
+    /\[Doc:\s*([a-zA-Z0-9-]+)(?:,\s*Art:\s*([a-zA-Z0-9.]+))?(?:,\s*Sec:\s*([a-zA-Z0-9.]+))?(?:,\s*Page:\s*(\d+))?\]([.,;:!?])?/g;
+
+  const transformed = text.replace(
+    citationWithPunctuation,
+    (match, documentId, article, section, pageStr, punctuation) => {
+      const citation: Citation = {
+        documentId,
+        article: article || undefined,
+        section: section || undefined,
+        page: pageStr ? parseInt(pageStr, 10) : undefined,
+        raw: match,
+      };
+
+      const key = getCitationKey(citation);
+
+      let source = sourceMap.get(key);
+      if (!source) {
+        source = { number: nextNumber++, citation };
+        sourceMap.set(key, source);
+        citationMap.set(source.number, citation);
+      } else if (citation.page && !source.citation.page) {
+        source.citation.page = citation.page;
+        citationMap.set(source.number, source.citation);
+      }
+
+      const punct = punctuation || "";
+      return `${punct}[^${source.number}]`;
+    },
+  );
+
+  if (sourceMap.size === 0) {
+    return { markdown: text, citationMap };
+  }
+
+  const footnotes = Array.from(sourceMap.values())
+    .sort((a, b) => a.number - b.number)
+    .map((source) => {
+      const { citation } = source;
+      let def = getDocumentName(citation.documentId);
+      if (citation.article) {
+        def += `, Art. ${citation.article}`;
+        if (citation.section) {
+          def += `, Sec. ${citation.section}`;
+        }
+      }
+      if (citation.page) {
+        def += ` (p. ${citation.page})`;
+      }
+      return `[^${source.number}]: ${def}`;
+    })
+    .join("\n");
+
+  return {
+    markdown: `${transformed}\n\n${footnotes}`,
+    citationMap,
+  };
 }
 
 /**
