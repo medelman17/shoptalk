@@ -7,11 +7,20 @@
  * Citation format: [Doc: {documentId}, Art: {article}, Sec: {section}, Page: {page}]
  */
 
-export type { Citation, TextSegment, ParseResult } from "./types";
+export type {
+  Citation,
+  TextSegment,
+  ParseResult,
+  FootnoteSegment,
+  FootnoteParseResult,
+  UniqueSource,
+  NumberedCitation,
+} from "./types";
 
 export {
   extractCitations,
   parseCitations,
+  parseFootnoteCitations,
   formatCitation,
   stripCitations,
   hasCitations,
