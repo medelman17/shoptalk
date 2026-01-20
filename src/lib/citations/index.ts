@@ -21,6 +21,7 @@ export {
   extractCitations,
   parseCitations,
   parseFootnoteCitations,
+  transformToMarkdownFootnotes,
   formatCitation,
   stripCitations,
   hasCitations,
