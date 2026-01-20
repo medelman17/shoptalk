@@ -3,12 +3,19 @@
  *
  * Handles streaming conversations with the contract agent, enforcing
  * document scope based on the user's Local union number.
+ *
+ * Uses Mastra Memory for automatic message persistence:
+ * - POST: Streams responses and auto-saves messages to PostgreSQL
+ * - GET: Retrieves conversation history from memory
  */
 
 import { handleChatStream } from "@mastra/ai-sdk";
+import { toAISdkV5Messages } from "@mastra/ai-sdk/ui";
 import { RequestContext } from "@mastra/core/request-context";
+import type { Memory } from "@mastra/memory";
 import { createUIMessageStreamResponse } from "ai";
 import type { UIMessage } from "ai";
+import { NextResponse } from "next/server";
 import { getClerkUserId } from "@/lib/auth";
 import { getUserProfile, isOnboardingComplete } from "@/lib/db/user-profile";
 import { getDocumentScope } from "@/lib/union";
@@ -19,6 +26,7 @@ import { mastra } from "@/mastra";
  */
 interface ChatRequestBody {
   messages: UIMessage[];
+  conversationId?: string; // Thread ID for memory
 }
 
 /**
@@ -26,6 +34,9 @@ interface ChatRequestBody {
  *
  * Streams contract Q&A responses with RAG-based retrieval.
  * Requires authentication and completed onboarding.
+ *
+ * When memory is configured (DATABASE_URL set), messages are automatically
+ * persisted to PostgreSQL via Mastra Memory.
  */
 export async function POST(req: Request) {
   try {
@@ -43,7 +54,7 @@ export async function POST(req: Request) {
 
     // 3. Parse request body
     const body = (await req.json()) as ChatRequestBody;
-    const { messages } = body;
+    const { messages, conversationId } = body;
 
     if (!messages || !Array.isArray(messages)) {
       return new Response("Invalid request: messages required", { status: 400 });
@@ -64,12 +75,21 @@ export async function POST(req: Request) {
     ]);
 
     // 6. Stream the response using Mastra's AI SDK integration
+    // Memory params enable automatic message persistence when DATABASE_URL is set
     const stream = await handleChatStream({
       mastra,
       agentId: "contract-agent",
       params: {
         messages,
         requestContext: requestContext as RequestContext,
+        // Memory configuration for automatic persistence
+        // thread = conversation ID, resource = user ID
+        ...(conversationId && {
+          memory: {
+            thread: conversationId,
+            resource: profile.id,
+          },
+        }),
       },
       sendStart: true,
       sendFinish: true,
@@ -90,5 +110,77 @@ export async function POST(req: Request) {
     }
 
     return new Response("Internal server error", { status: 500 });
+  }
+}
+
+/**
+ * GET /api/chat
+ *
+ * Retrieves conversation history from Mastra Memory.
+ * Used by the chat client to load previous messages.
+ *
+ * Query params:
+ * - conversationId: The thread ID to retrieve messages for
+ */
+export async function GET(req: Request) {
+  try {
+    // 1. Authenticate user
+    const userId = await getClerkUserId();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // 2. Get user profile
+    const profile = await getUserProfile(userId);
+    if (!profile || !isOnboardingComplete(profile)) {
+      return NextResponse.json(
+        { error: "Onboarding required" },
+        { status: 403 }
+      );
+    }
+
+    // 3. Get conversation ID from query params
+    const { searchParams } = new URL(req.url);
+    const conversationId = searchParams.get("conversationId");
+
+    if (!conversationId) {
+      return NextResponse.json(
+        { error: "conversationId is required" },
+        { status: 400 }
+      );
+    }
+
+    // 4. Get memory from the agent (cast to Memory for full API access)
+    const agent = mastra.getAgent("contractAgent");
+    const memory = (await agent.getMemory()) as Memory | null;
+
+    if (!memory) {
+      // Memory not configured - return empty array
+      // This happens when DATABASE_URL is not set
+      return NextResponse.json([]);
+    }
+
+    // 5. Recall messages from memory
+    let response = null;
+    try {
+      response = await memory.recall({
+        threadId: conversationId,
+        resourceId: profile.id,
+      });
+    } catch {
+      console.log("No previous messages found for thread:", conversationId);
+      return NextResponse.json([]);
+    }
+
+    // 6. Convert to UI message format
+    const uiMessages = toAISdkV5Messages(response?.messages || []);
+
+    return NextResponse.json(uiMessages);
+  } catch (error) {
+    console.error("GET /api/chat error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

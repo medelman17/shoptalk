@@ -1,8 +1,9 @@
+import { toAISdkV5Messages } from "@mastra/ai-sdk/ui";
+import type { Memory } from "@mastra/memory";
 import { notFound, redirect } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
 import { getUserProfile, isOnboardingComplete } from "@/lib/db/user-profile";
-import { getConversation, userOwnsConversation } from "@/lib/db/conversations";
-import { getMessages } from "@/lib/db/messages";
+import { mastra } from "@/mastra";
 import { ChatClient } from "@/components/chat";
 
 interface ConversationPageProps {
@@ -13,10 +14,13 @@ export async function generateMetadata({ params }: ConversationPageProps) {
   const { conversationId } = await params;
 
   try {
-    const conversation = await getConversation(conversationId);
+    const agent = mastra.getAgent("contractAgent");
+    const memory = (await agent.getMemory()) as Memory | null;
+    const thread = await memory?.getThreadById({ threadId: conversationId });
+
     return {
-      title: conversation?.title
-        ? `${conversation.title} - ShopTalk`
+      title: thread?.title
+        ? `${thread.title} - ShopTalk`
         : "Chat - ShopTalk",
       description: "Continue your conversation about your UPS Teamster contract",
     };
@@ -31,7 +35,7 @@ export async function generateMetadata({ params }: ConversationPageProps) {
 /**
  * Conversation page - displays an existing conversation.
  *
- * Loads the conversation and its messages from the database,
+ * Loads the conversation (thread) and its messages from Mastra Memory,
  * then renders the ChatClient component for continued interaction.
  */
 export default async function ConversationPage({ params }: ConversationPageProps) {
@@ -48,43 +52,50 @@ export default async function ConversationPage({ params }: ConversationPageProps
     redirect("/onboarding");
   }
 
-  // Verify conversation ownership
-  let conversation;
-  let messages;
+  // Get memory from agent (cast to Memory for full API access)
+  const agent = mastra.getAgent("contractAgent");
+  const memory = (await agent.getMemory()) as Memory | null;
 
+  if (!memory) {
+    // Memory not configured - redirect to new chat
+    redirect("/chat");
+  }
+
+  // Get thread from Mastra Memory
+  let thread;
   try {
-    const owns = await userOwnsConversation(conversationId, profile!.id);
-    if (!owns) {
-      notFound();
-    }
-
-    // Fetch conversation and messages
-    [conversation, messages] = await Promise.all([
-      getConversation(conversationId),
-      getMessages(conversationId),
-    ]);
+    thread = await memory.getThreadById({ threadId: conversationId });
   } catch (error) {
-    // If tables don't exist yet, redirect to chat
     console.error("Error loading conversation:", error);
     redirect("/chat");
   }
 
-  if (!conversation) {
+  if (!thread) {
     notFound();
   }
 
-  // Convert messages to the format expected by ChatClient
-  const initialMessages = messages.map((msg) => ({
-    id: msg.id,
-    role: msg.role,
-    content: msg.content,
-  }));
+  // Verify ownership (thread belongs to this user)
+  if (thread.resourceId !== profile!.id) {
+    notFound();
+  }
+
+  // Get messages from Mastra Memory
+  let initialMessages: unknown[] = [];
+  try {
+    const response = await memory.recall({
+      threadId: conversationId,
+      resourceId: profile!.id,
+    });
+    initialMessages = toAISdkV5Messages(response?.messages || []);
+  } catch {
+    // No messages yet - that's fine
+  }
 
   return (
     <ChatClient
       conversationId={conversationId}
-      conversationTitle={conversation.title}
-      initialMessages={initialMessages}
+      conversationTitle={thread.title ?? null}
+      initialMessages={initialMessages as import("ai").UIMessage[]}
     />
   );
 }

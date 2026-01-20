@@ -3,11 +3,90 @@
  *
  * This agent answers questions about union contracts using RAG,
  * providing responses with inline citations to source documents.
+ *
+ * Uses Mastra Memory for:
+ * - Automatic message persistence (PostgreSQL via Supabase)
+ * - Semantic recall (find relevant past Q&A across conversations)
+ * - Working memory (persistent user profiles with local union, preferences)
  */
 
 import { Agent } from "@mastra/core/agent";
+import type { MastraStorage } from "@mastra/core/storage";
+import { Memory } from "@mastra/memory";
+import { PostgresStore, PgVector } from "@mastra/pg";
 import { gateway } from "ai";
 import { contractQueryTool } from "../tools/contract-query";
+
+/**
+ * Create memory configuration for the contract agent.
+ *
+ * Uses PostgreSQL (Supabase) for storage and vector search.
+ * Requires DATABASE_URL environment variable.
+ */
+function createContractMemory(): Memory | undefined {
+  const connectionString = process.env.DATABASE_URL;
+
+  if (!connectionString) {
+    console.warn(
+      "DATABASE_URL not set - Memory features disabled. " +
+        "Set DATABASE_URL to enable conversation persistence, semantic recall, and working memory."
+    );
+    return undefined;
+  }
+
+  // PostgresStore extends MastraCompositeStore which implements MastraStorage at runtime
+  // but TypeScript types don't reflect this, so we cast it
+  const storage = new PostgresStore({
+    id: "shoptalk-storage",
+    connectionString,
+  }) as unknown as MastraStorage;
+
+  return new Memory({
+    storage,
+    vector: new PgVector({
+      id: "shoptalk-vector",
+      connectionString,
+    }),
+    embedder: gateway.embeddingModel("openai/text-embedding-3-small"),
+    options: {
+      // Keep last 20 messages in context (prevents context overflow)
+      lastMessages: 20,
+
+      // Semantic recall - find relevant past Q&A across conversations
+      semanticRecall: {
+        topK: 3,
+        messageRange: { before: 2, after: 1 },
+        scope: "resource", // Search across all user's conversations
+      },
+
+      // Working memory - persistent user profile across all conversations
+      workingMemory: {
+        enabled: true,
+        scope: "resource", // Persists across all user threads
+        template: `# Teamster Profile
+- **Name**:
+- **Local Union**:
+- **Region**:
+- **Job Classification**:
+- **Years of Service**:
+
+## Preferences
+- **Topics of Interest**: [overtime, seniority, grievances, benefits, etc.]
+- **Communication Style**: [detailed citations vs concise answers]
+
+## Context
+- **Recent Questions**:
+- **Ongoing Issues**:
+`,
+      },
+
+      // Auto-generate thread titles from first message
+      threads: {
+        generateTitle: true,
+      },
+    },
+  });
+}
 
 /**
  * System prompt for the contract agent.
@@ -80,6 +159,11 @@ End EVERY response with this disclaimer on its own line:
  *
  * Uses RAG to answer questions about UPS Teamster contracts with
  * inline citations to source documents.
+ *
+ * Memory features (when DATABASE_URL is set):
+ * - Automatic message persistence to PostgreSQL
+ * - Semantic recall finds relevant past conversations
+ * - Working memory persists user profile across sessions
  */
 export const contractAgent = new Agent({
   id: "contract-agent",
@@ -87,4 +171,5 @@ export const contractAgent = new Agent({
   instructions: CONTRACT_AGENT_INSTRUCTIONS,
   model: gateway.languageModel("anthropic/claude-sonnet-4-20250514"),
   tools: { contractQueryTool },
+  memory: createContractMemory(),
 });

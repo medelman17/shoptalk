@@ -2,7 +2,7 @@
 
 import { useChat, Chat } from "@ai-sdk/react";
 import { DefaultChatTransport, isToolUIPart, getToolName } from "ai";
-import { useRef, useEffect, useState, useMemo, useCallback } from "react";
+import { useRef, useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import type { UIMessage, ToolUIPart, DynamicToolUIPart } from "ai";
 import {
@@ -18,7 +18,6 @@ import {
 import { MessageWithCitations } from "@/components/ai-elements/message-with-citations";
 import { Loader } from "@/components/ai-elements/loader";
 import type { Citation } from "@/lib/citations";
-import { parseCitations } from "@/lib/citations";
 import { incrementQueryCount } from "@/lib/pwa/query-counter";
 import { CharacterCounter, QUERY_MAX_LENGTH } from "@/components/chat";
 import { ErrorDisplay } from "@/components/ui/error-display";
@@ -93,28 +92,10 @@ function ToolCallProgress({ toolCalls, isStreaming }: { toolCalls: ToolCallInfo[
   );
 }
 
-/**
- * Convert database messages to UIMessage format for useChat
- */
-interface DbMessage {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-}
-
-function dbMessagesToUIMessages(messages: DbMessage[]): UIMessage[] {
-  return messages.map((msg) => ({
-    id: msg.id,
-    role: msg.role,
-    parts: [{ type: "text" as const, text: msg.content }],
-    createdAt: new Date(),
-  }));
-}
-
 interface ChatClientProps {
   conversationId?: string; // Optional for new chats - will be created lazily
   conversationTitle?: string | null;
-  initialMessages?: DbMessage[];
+  initialMessages?: UIMessage[]; // Now receives UIMessage format directly
 }
 
 /**
@@ -124,8 +105,10 @@ interface ChatClientProps {
  * - Displaying messages
  * - Sending new messages
  * - Streaming responses
- * - Saving messages to the conversation
  * - Citation click handling (opens PDF panel)
+ *
+ * Message persistence is handled automatically by Mastra Memory
+ * when DATABASE_URL is configured.
  */
 export function ChatClient({
   conversationId,
@@ -137,8 +120,7 @@ export function ChatClient({
   const router = useRouter();
   const { openPdf } = usePdfPanel();
 
-  // Track pending message ID for saving assistant response
-  const [pendingMessageId, setPendingMessageId] = useState<string | null>(null);
+  // Track last question for retry functionality
   const pendingQuestionRef = useRef<string | null>(null);
 
   // Track current conversation ID (may be set lazily on first message)
@@ -150,14 +132,9 @@ export function ChatClient({
     conversationIdRef.current = currentConversationId;
   }, [currentConversationId]);
 
-  // Convert initial DB messages to UIMessage format
-  const initialUIMessages = useMemo(
-    () => dbMessagesToUIMessages(initialMessages),
-    [initialMessages]
-  );
-
   // Create the chat instance with the API transport and initial messages
   // Use a body function so it reads the current conversationId from the ref
+  // Mastra Memory will auto-save messages when conversationId is provided
   const chat = useMemo(
     () =>
       new Chat({
@@ -165,63 +142,12 @@ export function ChatClient({
           api: "/api/chat",
           body: () => ({ conversationId: conversationIdRef.current }),
         }),
-        messages: initialUIMessages,
+        messages: initialMessages,
       }),
-    [initialUIMessages]
+    [initialMessages]
   );
 
   const { messages, sendMessage, status, error } = useChat({ chat });
-
-  // Save assistant message when streaming completes
-  const saveAssistantMessage = useCallback(
-    async (answerText: string) => {
-      // Don't save without a conversation
-      if (!currentConversationId) return;
-
-      try {
-        // Parse citations from the answer
-        const parseResult = parseCitations(answerText);
-        const citations = parseResult.citations.map((c) => ({
-          source: c.documentId,
-          text: c.raw,
-          page: c.page,
-          section: c.section,
-        }));
-
-        // Save assistant message to conversation
-        await fetch(`/api/conversations/${currentConversationId}/messages`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            role: "assistant",
-            content: answerText,
-            citations,
-          }),
-        });
-
-        // Refresh the page to update sidebar
-        router.refresh();
-      } catch (error) {
-        console.error("Failed to save assistant message:", error);
-      } finally {
-        setPendingMessageId(null);
-      }
-    },
-    [currentConversationId, router]
-  );
-
-  // Save answer when streaming completes
-  useEffect(() => {
-    if (status === "ready" && messages.length > 0 && pendingMessageId) {
-      const lastMessage = messages[messages.length - 1];
-      if (lastMessage?.role === "assistant") {
-        const answerText = getMessageText(lastMessage);
-        if (answerText) {
-          saveAssistantMessage(answerText);
-        }
-      }
-    }
-  }, [status, messages, pendingMessageId, saveAssistantMessage]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -243,7 +169,7 @@ export function ChatClient({
 
     let convId = currentConversationId;
 
-    // Create conversation if this is the first message
+    // Create conversation (thread) if this is the first message
     if (!convId) {
       try {
         const response = await fetch("/api/conversations", {
@@ -262,37 +188,20 @@ export function ChatClient({
 
         // Track query count for PWA install prompt
         incrementQueryCount();
-
-        // Set pending message ID for assistant response save
-        if (data.message) {
-          setPendingMessageId(data.message.id);
-        }
       } catch (error) {
         console.error("Failed to create conversation:", error);
         // Still send message to get AI response, even if save failed
       }
     } else {
-      // Existing conversation - save user message
-      try {
-        const response = await fetch(`/api/conversations/${convId}/messages`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ role: "user", content: text }),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setPendingMessageId(data.message.id);
-          // Track query count for PWA install prompt
-          incrementQueryCount();
-        }
-      } catch (error) {
-        console.error("Failed to save user message:", error);
-      }
+      // Track query count for PWA install prompt
+      incrementQueryCount();
     }
 
-    // Send message regardless of save success
+    // Send message - Mastra Memory will auto-save both user and assistant messages
     await sendMessage({ text });
+
+    // Refresh sidebar to show updated conversation
+    router.refresh();
   };
 
   const handleCitationClick = (citation: Citation) => {
@@ -307,7 +216,7 @@ export function ChatClient({
 
     let convId = currentConversationId;
 
-    // Create conversation if this is the first message
+    // Create conversation (thread) if this is the first message
     if (!convId) {
       try {
         const response = await fetch("/api/conversations", {
@@ -326,35 +235,19 @@ export function ChatClient({
 
         // Track query count for PWA install prompt
         incrementQueryCount();
-
-        // Set pending message ID for assistant response save
-        if (data.message) {
-          setPendingMessageId(data.message.id);
-        }
       } catch (error) {
         console.error("Failed to create conversation:", error);
       }
     } else {
-      // Existing conversation - save user message
-      try {
-        const response = await fetch(`/api/conversations/${convId}/messages`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ role: "user", content: question }),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setPendingMessageId(data.message.id);
-          // Track query count for PWA install prompt
-          incrementQueryCount();
-        }
-      } catch (error) {
-        console.error("Failed to save user message:", error);
-      }
+      // Track query count for PWA install prompt
+      incrementQueryCount();
     }
 
+    // Send message - Mastra Memory will auto-save both user and assistant messages
     await sendMessage({ text: question });
+
+    // Refresh sidebar to show updated conversation
+    router.refresh();
   };
 
   const title = conversationTitle || "Contract Q&A";
