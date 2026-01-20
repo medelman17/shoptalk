@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { XIcon, DownloadIcon, ShareIcon } from "lucide-react";
 import { usePwaInstall } from "./use-pwa-install";
@@ -24,24 +24,33 @@ interface InstallPromptProps {
 
 export function InstallPrompt({ className }: InstallPromptProps) {
   const { canInstall, isInstalled, isIOS, install } = usePwaInstall();
-  const [isVisible, setIsVisible] = useState(false);
   const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+  // Use lazy initialization to read from localStorage only once
+  const [isDismissed, setIsDismissed] = useState(() => {
+    // This runs only on initial render (client-side)
+    if (typeof window === "undefined") return false;
+    return hasUserDismissedPrompt();
+  });
+  const [hasMounted, setHasMounted] = useState(false);
 
-  // Check if we should show the prompt
+  // Mark component as mounted (for hydration safety)
+  // Use requestAnimationFrame to avoid synchronous setState warning
   useEffect(() => {
-    // Don't show if already installed or dismissed
-    if (isInstalled || hasUserDismissedPrompt()) {
-      setIsVisible(false);
-      return;
-    }
+    const id = requestAnimationFrame(() => {
+      setHasMounted(true);
+    });
+    return () => cancelAnimationFrame(id);
+  }, []);
 
-    // Show if threshold reached and can install (or is iOS)
-    if (shouldShowInstallPrompt() && (canInstall || isIOS)) {
-      setIsVisible(true);
-    }
-  }, [canInstall, isInstalled, isIOS]);
+  // Derive visibility from state - no need for separate visibility state
+  // Only show after mount to avoid hydration issues
+  const isVisible = hasMounted &&
+    !isDismissed &&
+    !isInstalled &&
+    shouldShowInstallPrompt() &&
+    (canInstall || isIOS);
 
-  const handleInstall = async () => {
+  const handleInstall = useCallback(async () => {
     if (isIOS) {
       setShowIOSInstructions(true);
       return;
@@ -49,15 +58,15 @@ export function InstallPrompt({ className }: InstallPromptProps) {
 
     const success = await install();
     if (success) {
-      setIsVisible(false);
+      setIsDismissed(true);
     }
-  };
+  }, [isIOS, install]);
 
-  const handleDismiss = () => {
+  const handleDismiss = useCallback(() => {
     dismissInstallPrompt();
-    setIsVisible(false);
+    setIsDismissed(true);
     setShowIOSInstructions(false);
-  };
+  }, []);
 
   if (!isVisible) return null;
 

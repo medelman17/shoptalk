@@ -19,7 +19,9 @@ interface QueryListItemProps {
 }
 
 export function QueryListItem({ query, className }: QueryListItemProps) {
-  const timeAgo = formatDistanceToNow(new Date(query.created_at ?? Date.now()), {
+  // created_at is always set by the database, so we can safely use it
+  const createdAt = query.created_at ? new Date(query.created_at) : new Date();
+  const timeAgo = formatDistanceToNow(createdAt, {
     addSuffix: true,
   });
 

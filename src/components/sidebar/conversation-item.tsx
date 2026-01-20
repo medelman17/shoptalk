@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { MessageSquare, MoreHorizontal, Trash2 } from "lucide-react";
 
-import { cn } from "@/lib/utils";
 import {
   SidebarMenuAction,
   SidebarMenuButton,

@@ -1,6 +1,6 @@
 import type { ApplicableDocuments, Region, SupplementChain } from "./types";
 import { getLocalByNumber } from "./locals";
-import { MASTER_AGREEMENT, SUPPLEMENTS, RIDERS, getDocument } from "./supplements";
+import { MASTER_AGREEMENT, getDocument } from "./supplements";
 
 /**
  * Mapping of Local numbers to their supplement chains.
@@ -190,7 +190,6 @@ export function getDocumentScope(localNumber: number): string[] {
  * @returns Object containing all applicable documents with full details
  */
 export function getApplicableDocuments(localNumber: number): ApplicableDocuments {
-  const scope = getDocumentScope(localNumber);
   const chain = getSupplementChain(localNumber);
 
   const supplements = chain?.supplements.map((id) => getDocument(id)).filter(Boolean) ?? [];

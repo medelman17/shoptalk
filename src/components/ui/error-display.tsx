@@ -7,7 +7,8 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { AppError, ErrorType } from "@/lib/errors";
@@ -22,6 +23,7 @@ import {
   ShieldXIcon,
   RefreshCwIcon,
   LogInIcon,
+  type LucideIcon,
 } from "lucide-react";
 
 interface ErrorDisplayProps {
@@ -32,29 +34,18 @@ interface ErrorDisplayProps {
 }
 
 /**
- * Get the appropriate icon for an error type.
+ * Map of error types to their corresponding icons.
  */
-function getErrorIcon(type: ErrorType) {
-  switch (type) {
-    case "network":
-      return WifiOffIcon;
-    case "rate-limit":
-      return ClockIcon;
-    case "no-results":
-      return SearchXIcon;
-    case "validation":
-      return AlertTriangleIcon;
-    case "auth":
-      return LockIcon;
-    case "not-found":
-      return FileQuestionIcon;
-    case "forbidden":
-      return ShieldXIcon;
-    case "generic":
-    default:
-      return AlertCircleIcon;
-  }
-}
+const ERROR_ICONS: Record<ErrorType, LucideIcon> = {
+  network: WifiOffIcon,
+  "rate-limit": ClockIcon,
+  "no-results": SearchXIcon,
+  validation: AlertTriangleIcon,
+  auth: LockIcon,
+  "not-found": FileQuestionIcon,
+  forbidden: ShieldXIcon,
+  generic: AlertCircleIcon,
+};
 
 /**
  * Format time remaining for rate limit errors.
@@ -68,13 +59,23 @@ function formatTimeRemaining(seconds: number): string {
 }
 
 export function ErrorDisplay({ error, className, compact = false }: ErrorDisplayProps) {
+  // Initialize countdown from the error's retryAfter value
   const [retryCountdown, setRetryCountdown] = useState(error.retryAfter ?? 0);
+  // Track the last retryAfter value to detect changes
+  const lastRetryAfterRef = useRef(error.retryAfter);
 
   // Countdown timer for rate limit errors
   useEffect(() => {
-    if (!error.retryAfter || error.retryAfter <= 0) return;
+    const retryAfter = error.retryAfter;
+    if (!retryAfter || retryAfter <= 0) return;
 
-    setRetryCountdown(error.retryAfter);
+    // Reset countdown if retryAfter changed (use queueMicrotask to avoid sync setState)
+    if (retryAfter !== lastRetryAfterRef.current) {
+      lastRetryAfterRef.current = retryAfter;
+      queueMicrotask(() => {
+        setRetryCountdown(retryAfter);
+      });
+    }
 
     const interval = setInterval(() => {
       setRetryCountdown((prev) => {
@@ -89,7 +90,8 @@ export function ErrorDisplay({ error, className, compact = false }: ErrorDisplay
     return () => clearInterval(interval);
   }, [error.retryAfter]);
 
-  const Icon = getErrorIcon(error.type);
+  // Get icon component from the map (not creating a new component)
+  const IconComponent = ERROR_ICONS[error.type] ?? AlertCircleIcon;
   const canRetry = error.onRetry && (error.type !== "rate-limit" || retryCountdown === 0);
   const showLogin = error.type === "auth";
 
@@ -101,7 +103,7 @@ export function ErrorDisplay({ error, className, compact = false }: ErrorDisplay
           className
         )}
       >
-        <Icon className="h-5 w-5 shrink-0 text-destructive" />
+        <IconComponent className="h-5 w-5 shrink-0 text-destructive" />
         <div className="flex-1 min-w-0">
           <p className="text-sm text-destructive truncate">{error.message}</p>
         </div>
@@ -128,7 +130,7 @@ export function ErrorDisplay({ error, className, compact = false }: ErrorDisplay
     >
       <div className="flex items-start gap-4">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/20">
-          <Icon className="h-5 w-5 text-destructive" />
+          <IconComponent className="h-5 w-5 text-destructive" />
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-medium text-destructive">{error.title}</h3>
@@ -156,10 +158,10 @@ export function ErrorDisplay({ error, className, compact = false }: ErrorDisplay
               )}
               {showLogin && (
                 <Button variant="outline" size="sm" asChild>
-                  <a href="/sign-in">
+                  <Link href="/sign-in">
                     <LogInIcon className="h-4 w-4" />
                     <span>Sign In</span>
-                  </a>
+                  </Link>
                 </Button>
               )}
             </div>

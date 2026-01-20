@@ -10,8 +10,8 @@
  *   pnpm tsx scripts/extract-pdf.ts --list             # List available documents
  */
 
-import { existsSync, mkdirSync, writeFileSync, readFileSync } from "fs";
-import { join, resolve } from "path";
+import { existsSync, mkdirSync, writeFileSync } from "fs";
+import { join } from "path";
 import { extractPdf } from "../src/lib/documents/extract";
 import { DOCUMENT_MANIFEST, type RawDocument } from "../src/lib/documents/manifest";
 import type { ExtractedDocument } from "../src/lib/documents/types";

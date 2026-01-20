@@ -11,8 +11,6 @@ export interface MessageCitation {
   section?: string;
 }
 
-// Helper type for JSON conversion
-type JsonCitation = { source: string; text: string; page?: number; section?: string };
 
 /**
  * Message type (will be added to types.ts after migration + type generation)

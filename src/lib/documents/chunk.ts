@@ -9,10 +9,8 @@ import type {
   ExtractedDocument,
   DocumentChunk,
   ChunkedDocument,
-  ChunkMetadata,
   ChunkingConfig,
   SectionHeader,
-  DEFAULT_CHUNKING_CONFIG,
 } from "./types";
 import { detectSectionHeaders, getFullText, getPageForOffset } from "./extract";
 
