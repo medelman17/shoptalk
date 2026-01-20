@@ -86,25 +86,31 @@ export async function POST(req: Request) {
       ["userContextHeader", userContextHeader],
     ]);
 
-    // 7. Prepend user context as a system message
-    // This tells the agent the user's position and applicable contracts
-    const userContextSystemMessage: UIMessage = {
-      id: "user-context-system",
-      role: "system" as const,
-      parts: [
-        {
-          type: "text" as const,
-          text: `USER CONTEXT (include at the start of EVERY response):
-${userContextHeader}
-
----`,
-        },
-      ],
-    };
-    const messagesWithContext: UIMessage[] = [
-      userContextSystemMessage,
-      ...messages,
-    ];
+    // 7. Add user context to the latest user message
+    // Find the last user message and prepend context to it
+    const lastUserMsgIdx = messages.findLastIndex((m) => m.role === "user");
+    const messagesWithContext =
+      lastUserMsgIdx >= 0
+        ? messages.map((msg, idx) => {
+            if (idx === lastUserMsgIdx) {
+              const textPart = msg.parts.find((p) => p.type === "text");
+              if (textPart && "text" in textPart) {
+                return {
+                  ...msg,
+                  parts: msg.parts.map((p) =>
+                    p === textPart
+                      ? {
+                          ...p,
+                          text: `[USER CONTEXT - Include this header at start of response]\n${userContextHeader}\n---\n\n${textPart.text}`,
+                        }
+                      : p,
+                  ),
+                };
+              }
+            }
+            return msg;
+          })
+        : messages;
 
     // 8. Stream the response using Mastra's AI SDK integration
     // Memory params enable automatic message persistence when DATABASE_URL is set
