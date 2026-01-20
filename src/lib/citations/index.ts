@@ -15,6 +15,7 @@ export type {
   FootnoteParseResult,
   UniqueSource,
   NumberedCitation,
+  MarkdownFootnotesResult,
 } from "./types";
 
 export {
@@ -22,6 +23,7 @@ export {
   parseCitations,
   parseFootnoteCitations,
   transformToMarkdownFootnotes,
+  transformToMarkdownFootnotesWithMap,
   formatCitation,
   stripCitations,
   hasCitations,

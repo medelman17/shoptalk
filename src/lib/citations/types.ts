@@ -79,3 +79,13 @@ export interface FootnoteParseResult {
   /** Text segments with footnote numbers */
   segments: FootnoteSegment[];
 }
+
+/**
+ * Result of transforming citations to markdown footnotes.
+ */
+export interface MarkdownFootnotesResult {
+  /** The transformed markdown with [^N] syntax */
+  markdown: string;
+  /** Map of footnote number to citation data */
+  citationMap: Map<number, Citation>;
+}
