@@ -149,6 +149,20 @@ export function ChatClient({
 
   const { messages, sendMessage, status, error } = useChat({ chat });
 
+  // Debug: log messages and status changes
+  useEffect(() => {
+    console.log("[ChatClient] messages:", messages.length, "status:", status);
+  }, [messages, status]);
+
+  // Refresh sidebar when streaming completes (to show new/updated conversation)
+  const prevStatusRef = useRef(status);
+  useEffect(() => {
+    if (prevStatusRef.current === "streaming" && status === "ready") {
+      router.refresh();
+    }
+    prevStatusRef.current = status;
+  }, [status, router]);
+
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (scrollRef.current) {
@@ -183,9 +197,6 @@ export function ChatClient({
         convId = data.conversation.id;
         setCurrentConversationId(convId);
 
-        // Update URL without page reload
-        router.replace(`/chat/${convId}`, { scroll: false });
-
         // Track query count for PWA install prompt
         incrementQueryCount();
       } catch (error) {
@@ -198,10 +209,13 @@ export function ChatClient({
     }
 
     // Send message - Mastra Memory will auto-save both user and assistant messages
+    // Note: sendMessage returns when request is sent, not when stream completes
     await sendMessage({ text });
 
-    // Refresh sidebar to show updated conversation
-    router.refresh();
+    // Update URL after message is sent (don't navigate, just update URL for bookmarking/sharing)
+    if (convId && !conversationId) {
+      window.history.replaceState(null, "", `/chat/${convId}`);
+    }
   };
 
   const handleCitationClick = (citation: Citation) => {
@@ -230,9 +244,6 @@ export function ChatClient({
         convId = data.conversation.id;
         setCurrentConversationId(convId);
 
-        // Update URL without page reload
-        router.replace(`/chat/${convId}`, { scroll: false });
-
         // Track query count for PWA install prompt
         incrementQueryCount();
       } catch (error) {
@@ -244,10 +255,13 @@ export function ChatClient({
     }
 
     // Send message - Mastra Memory will auto-save both user and assistant messages
+    // Note: sendMessage returns when request is sent, not when stream completes
     await sendMessage({ text: question });
 
-    // Refresh sidebar to show updated conversation
-    router.refresh();
+    // Update URL after message is sent (don't navigate, just update URL for bookmarking/sharing)
+    if (convId && !conversationId) {
+      window.history.replaceState(null, "", `/chat/${convId}`);
+    }
   };
 
   const title = conversationTitle || "Contract Q&A";
