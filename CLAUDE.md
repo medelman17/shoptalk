@@ -123,9 +123,14 @@ src/
 │   └── workflows/            # AI workflows
 └── middleware.ts             # Route protection
 data/
-└── contracts/                # Contract PDF files (30 documents)
+├── contracts/                # Contract PDF files (30 documents)
+└── eval/                     # Evaluation dataset (Reddit Q&A)
+    ├── reddit-questions.jsonl  # Processed dataset
+    └── reddit-metadata.json    # Statistics
 scripts/
-└── ingest-contracts.ts       # Document ingestion CLI
+├── ingest-contracts.ts       # Document ingestion CLI
+├── fetch-reddit-eval.ts      # Reddit eval dataset builder
+└── lib/reddit/               # Reddit fetching utilities
 supabase/
 ├── migrations/               # Database migrations
 └── seed.sql                  # Test data for local dev
@@ -152,6 +157,13 @@ pnpm tsx scripts/ingest-contracts.ts --setup   # Create Pinecone index
 pnpm tsx scripts/ingest-contracts.ts --stats   # Show index statistics
 pnpm tsx scripts/ingest-contracts.ts           # Ingest all documents
 pnpm tsx scripts/ingest-contracts.ts --id <id> # Ingest single document
+
+# Evaluation Dataset (Reddit r/UPSers)
+pnpm eval:fetch                    # Fetch Q&A data from r/UPSers (~30-45 min)
+pnpm eval:fetch -q "grievance" -l 20  # Test with single query
+pnpm eval:stats                    # Show dataset statistics
+pnpm eval:fetch --resume           # Resume interrupted fetch
+pnpm eval:fetch --dry-run          # Analyze without writing files
 ```
 
 ## Environment Variables

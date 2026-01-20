@@ -15,7 +15,9 @@
     "db:reset": "npx supabase db reset",
     "db:status": "npx supabase migration list",
     "mastra:dev": "mastra dev",
-    "dev:all": "npm-run-all --parallel dev mastra:dev"
+    "dev:all": "npm-run-all --parallel dev mastra:dev",
+    "eval:fetch": "tsx scripts/fetch-reddit-eval.ts",
+    "eval:stats": "tsx scripts/fetch-reddit-eval.ts --stats"
   },
   "dependencies": {
     "@ai-sdk/react": "^3.0.43",
