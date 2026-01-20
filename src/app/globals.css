@@ -124,3 +124,47 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Footnote styling for prose content */
+@layer components {
+  /* Footnote reference numbers (superscripts in text) */
+  .prose sup a[href^="#user-content-fn-"],
+  .prose sup a[href^="#fn-"] {
+    @apply text-[0.7em] font-semibold text-primary/70 no-underline;
+    @apply hover:text-primary transition-colors;
+    @apply px-0.5 py-0 rounded;
+    @apply hover:bg-primary/10;
+    font-feature-settings: "tnum" 1;
+    vertical-align: super;
+  }
+
+  /* The sup wrapper itself */
+  .prose sup:has(a[href^="#user-content-fn-"]),
+  .prose sup:has(a[href^="#fn-"]) {
+    @apply text-[0.7em] leading-none;
+    vertical-align: baseline;
+  }
+
+  /* Footnote section at the bottom */
+  .prose section[data-footnotes] {
+    @apply mt-8 pt-4 border-t border-border text-sm text-muted-foreground;
+  }
+
+  .prose section[data-footnotes] h2 {
+    @apply sr-only;
+  }
+
+  .prose section[data-footnotes] ol {
+    @apply pl-4 space-y-2;
+  }
+
+  .prose section[data-footnotes] li {
+    @apply text-muted-foreground;
+  }
+
+  /* Back-reference links in footnotes */
+  .prose a[href^="#user-content-fnref-"],
+  .prose a[href^="#fnref-"] {
+    @apply text-primary/60 hover:text-primary no-underline ml-1;
+  }
+}
