@@ -176,7 +176,7 @@ SUPABASE_SERVICE_ROLE_KEY   # Server-side only, bypasses RLS
 # Mastra Memory (PostgreSQL via Supabase pooler)
 # Get from Supabase Dashboard > Project Settings > Database > Connection string (pooler)
 # Format: postgresql://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres
-DATABASE_URL                # Required for conversation persistence, semantic recall, working memory
+POSTGRES_URL                # Required for conversation persistence, semantic recall, working memory
 ```
 
 ## Database Migrations

@@ -21,15 +21,15 @@ import { contractQueryTool } from "../tools/contract-query";
  * Create memory configuration for the contract agent.
  *
  * Uses PostgreSQL (Supabase) for storage and vector search.
- * Requires DATABASE_URL environment variable.
+ * Requires POSTGRES_URL environment variable.
  */
 function createContractMemory(): Memory | undefined {
-  const connectionString = process.env.DATABASE_URL;
+  const connectionString = process.env.POSTGRES_URL;
 
   if (!connectionString) {
     console.warn(
-      "DATABASE_URL not set - Memory features disabled. " +
-        "Set DATABASE_URL to enable conversation persistence, semantic recall, and working memory."
+      "POSTGRES_URL not set - Memory features disabled. " +
+        "Set POSTGRES_URL to enable conversation persistence, semantic recall, and working memory."
     );
     return undefined;
   }
