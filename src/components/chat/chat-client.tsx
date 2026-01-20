@@ -1,8 +1,8 @@
 "use client";
 
-import { useChat, Chat } from "@ai-sdk/react";
+import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isToolUIPart, getToolName } from "ai";
-import { useRef, useEffect, useState, useMemo } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { UIMessage, ToolUIPart, DynamicToolUIPart } from "ai";
 import {
@@ -132,22 +132,30 @@ export function ChatClient({
     conversationIdRef.current = currentConversationId;
   }, [currentConversationId]);
 
-  // Create the chat instance with the API transport and initial messages
-  // Use a body function so it reads the current conversationId from the ref
-  // Mastra Memory will auto-save messages when conversationId is provided
-  const chat = useMemo(
-    () =>
-      new Chat({
-        transport: new DefaultChatTransport({
-          api: "/api/chat",
-          body: () => ({ conversationId: conversationIdRef.current }),
-        }),
-        messages: initialMessages,
-      }),
-    [initialMessages]
-  );
+  // Idiomatic Mastra pattern: direct useChat with DefaultChatTransport
+  // Uses prepareSendMessagesRequest for explicit request body control
+  const { messages, setMessages, sendMessage, status, error } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+      prepareSendMessagesRequest({ messages }) {
+        return {
+          body: {
+            messages,
+            conversationId: conversationIdRef.current,
+          },
+        };
+      },
+    }),
+  });
 
-  const { messages, sendMessage, status, error } = useChat({ chat });
+  // Initialize messages from server (preserves SSR pre-loading benefits)
+  const initializedRef = useRef(false);
+  useEffect(() => {
+    if (!initializedRef.current && initialMessages.length > 0) {
+      setMessages(initialMessages);
+      initializedRef.current = true;
+    }
+  }, [initialMessages, setMessages]);
 
   // Debug: log messages and status changes
   useEffect(() => {

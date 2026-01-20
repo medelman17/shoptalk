@@ -151,6 +151,8 @@ export async function GET(req: Request) {
     }
 
     // 4. Get memory from the agent (cast to Memory for full API access)
+    // Note: mastra.getAgent() uses the object key from registration ("contractAgent")
+    // while handleChatStream uses the agent's internal id ("contract-agent")
     const agent = mastra.getAgent("contractAgent");
     const memory = (await agent.getMemory()) as Memory | null;
 
