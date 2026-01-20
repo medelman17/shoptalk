@@ -8,7 +8,8 @@ export const MASTER_AGREEMENT: Supplement = {
   name: "National Master UPS Agreement",
   shortName: "Master Agreement",
   type: "master",
-  description: "The primary collective bargaining agreement covering all UPS Teamsters nationwide",
+  description:
+    "The primary collective bargaining agreement covering all UPS Teamsters nationwide",
 };
 
 /**
@@ -20,35 +21,40 @@ export const SUPPLEMENTS: Record<string, Supplement> = {
     name: "Western Region of Teamsters United Parcel Service Supplemental Agreement",
     shortName: "Western Supplement",
     type: "supplement",
-    description: "Covers California, Oregon, Washington, Nevada, Arizona, Colorado, Utah, New Mexico, Wyoming, Montana, Idaho, Hawaii, and Alaska",
+    description:
+      "Covers California, Oregon, Washington, Nevada, Arizona, Colorado, Utah, New Mexico, Wyoming, Montana, Idaho, Hawaii, and Alaska",
   },
   central: {
     id: "central",
     name: "Central Region of Teamsters and United Parcel Service Supplemental Agreement",
     shortName: "Central Supplement",
     type: "supplement",
-    description: "Covers Illinois, Indiana, Ohio, Michigan, Wisconsin, Minnesota, Iowa, Missouri, Kansas, Nebraska, North Dakota, and South Dakota",
+    description:
+      "Covers Illinois, Indiana, Ohio, Michigan, Wisconsin, Minnesota, Iowa, Missouri, Kansas, Nebraska, North Dakota, and South Dakota",
   },
   southern: {
     id: "southern",
     name: "Southern Region of Teamsters and United Parcel Service Supplemental Agreement",
     shortName: "Southern Supplement",
     type: "supplement",
-    description: "Covers Texas, Louisiana, Arkansas, Oklahoma, Mississippi, Alabama, Tennessee, and Kentucky",
+    description:
+      "Covers Texas, Louisiana, Arkansas, Oklahoma, Mississippi, Alabama, Tennessee, and Kentucky",
   },
   atlantic: {
     id: "atlantic",
     name: "Atlantic Area Teamsters and United Parcel Service Supplemental Agreement",
     shortName: "Atlantic Supplement",
     type: "supplement",
-    description: "Covers Pennsylvania, New Jersey, Delaware, Maryland, Virginia, West Virginia, and Washington D.C.",
+    description:
+      "Covers Pennsylvania, New Jersey, Delaware, Maryland, Virginia, West Virginia, and Washington D.C.",
   },
   eastern: {
     id: "eastern",
     name: "Eastern Region of Teamsters United Parcel Service Supplemental Agreement",
     shortName: "Eastern Supplement",
     type: "supplement",
-    description: "Covers New York (outside 804), Connecticut, Massachusetts, New Hampshire, Vermont, Maine, and Rhode Island",
+    description:
+      "Covers New York (outside 804), Connecticut, Massachusetts, New Hampshire, Vermont, Maine, and Rhode Island",
   },
   // Standalone local agreements (treated as supplements)
   "local-804": {
@@ -63,7 +69,8 @@ export const SUPPLEMENTS: Record<string, Supplement> = {
     name: "Local 705 and United Parcel Service Supplemental Agreement",
     shortName: "Local 705 Agreement",
     type: "local",
-    description: "Standalone agreement for Local 705 (Chicago metropolitan area)",
+    description:
+      "Standalone agreement for Local 705 (Chicago metropolitan area)",
   },
   "local-710": {
     id: "local-710",
@@ -133,6 +140,20 @@ export const RIDERS: Record<string, Supplement> = {
     shortName: "MI-IN Rider",
     type: "rider",
     description: "Additional provisions for Michigan and Indiana locals",
+  },
+  "local-177-drivers": {
+    id: "local-177-drivers",
+    name: "Local 177 Drivers Rider",
+    shortName: "Local 177 Drivers",
+    type: "rider",
+    description: "Additional provisions for Local 177 drivers (New Jersey)",
+  },
+  "local-177-mechanics": {
+    id: "local-177-mechanics",
+    name: "Local 177 Mechanics Rider",
+    shortName: "Local 177 Mechanics",
+    type: "rider",
+    description: "Additional provisions for Local 177 mechanics (New Jersey)",
   },
 };
 
