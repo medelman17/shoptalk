@@ -39,13 +39,16 @@ function createContractMemory(): Memory | undefined {
   // - Use sslmode=no-verify to bypass certificate validation
   //   (Supabase pooler uses SSL but the certificate chain can't be verified by Node.js)
   // - Production also needs pgbouncer=true for Supabase pooler compatibility
-  const params: string[] = [];
 
+  // Force sslmode=no-verify - Supabase pooler's cert chain triggers
+  // "self-signed certificate in certificate chain" error with other modes
+  connectionString = connectionString.replace(/sslmode=[^&]+/, "sslmode=no-verify");
   if (!connectionString.includes("sslmode=")) {
-    // Use no-verify for both dev and prod - Supabase pooler's cert chain
-    // triggers "self-signed certificate in certificate chain" error
-    params.push("sslmode=no-verify");
+    const separator = connectionString.includes("?") ? "&" : "?";
+    connectionString = `${connectionString}${separator}sslmode=no-verify`;
   }
+
+  const params: string[] = [];
 
   // Add pgbouncer=true for Supabase connection pooler compatibility
   // This disables prepared statements which aren't supported by PgBouncer
