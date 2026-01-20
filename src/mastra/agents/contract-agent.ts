@@ -25,12 +25,13 @@ import { contractQueryTool } from "../tools/contract-query";
  */
 function createContractMemory(): Memory | undefined {
   // Use POSTGRES_PRISMA_URL which includes proper SSL config for serverless
-  let connectionString = process.env.POSTGRES_PRISMA_URL || process.env.POSTGRES_URL;
+  let connectionString =
+    process.env.POSTGRES_PRISMA_URL || process.env.POSTGRES_URL;
 
   if (!connectionString) {
     console.warn(
       "POSTGRES_PRISMA_URL/POSTGRES_URL not set - Memory features disabled. " +
-        "Set a PostgreSQL connection string to enable conversation persistence, semantic recall, and working memory."
+        "Set a PostgreSQL connection string to enable conversation persistence, semantic recall, and working memory.",
     );
     return undefined;
   }
@@ -42,7 +43,10 @@ function createContractMemory(): Memory | undefined {
 
   // Force sslmode=no-verify - Supabase pooler's cert chain triggers
   // "self-signed certificate in certificate chain" error with other modes
-  connectionString = connectionString.replace(/sslmode=[^&]+/, "sslmode=no-verify");
+  connectionString = connectionString.replace(
+    /sslmode=[^&]+/,
+    "sslmode=no-verify",
+  );
   if (!connectionString.includes("sslmode=")) {
     const separator = connectionString.includes("?") ? "&" : "?";
     connectionString = `${connectionString}${separator}sslmode=no-verify`;
@@ -52,7 +56,10 @@ function createContractMemory(): Memory | undefined {
 
   // Add pgbouncer=true for Supabase connection pooler compatibility
   // This disables prepared statements which aren't supported by PgBouncer
-  if (!connectionString.includes("pgbouncer=") && process.env.NODE_ENV !== "development") {
+  if (
+    !connectionString.includes("pgbouncer=") &&
+    process.env.NODE_ENV !== "development"
+  ) {
     params.push("pgbouncer=true");
   }
 
@@ -63,7 +70,9 @@ function createContractMemory(): Memory | undefined {
 
   // Log connection setup (without exposing credentials)
   const urlObj = new URL(connectionString);
-  console.log(`[MastraMemory] Connecting to ${urlObj.host}${urlObj.pathname} with params: ${urlObj.searchParams.toString()}`);
+  console.log(
+    `[MastraMemory] Connecting to ${urlObj.host}${urlObj.pathname} with params: ${urlObj.searchParams.toString()}`,
+  );
 
   // PostgresStore extends MastraCompositeStore which implements MastraStorage at runtime
   // but TypeScript types don't reflect this, so we cast it
@@ -91,8 +100,9 @@ function createContractMemory(): Memory | undefined {
       },
 
       // Working memory - persistent user profile across all conversations
+      // TEMPORARILY DISABLED - set enabled: true to re-enable
       workingMemory: {
-        enabled: true,
+        enabled: false,
         scope: "resource", // Persists across all user threads
         template: `# Teamster Profile
 - **Name**:
