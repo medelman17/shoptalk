@@ -35,11 +35,13 @@ function createContractMemory(): Memory | undefined {
     return undefined;
   }
 
-  // In development, we may need to bypass SSL certificate validation for self-signed certs
-  // Supabase uses SSL but the certificate chain may not be recognized locally
-  if (process.env.NODE_ENV === "development" && !connectionString.includes("sslmode=no-verify")) {
+  // Handle SSL mode for PostgreSQL connections
+  // - Development: Use sslmode=no-verify to bypass certificate validation for local testing
+  // - Production: Use sslmode=require for Supabase pooler connections (valid certs, no verification needed)
+  if (!connectionString.includes("sslmode=")) {
     const separator = connectionString.includes("?") ? "&" : "?";
-    connectionString = `${connectionString}${separator}sslmode=no-verify`;
+    const sslMode = process.env.NODE_ENV === "development" ? "no-verify" : "require";
+    connectionString = `${connectionString}${separator}sslmode=${sslMode}`;
   }
 
   // PostgresStore extends MastraCompositeStore which implements MastraStorage at runtime
