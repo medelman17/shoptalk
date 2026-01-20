@@ -25,12 +25,13 @@ import { contractQueryTool } from "../tools/contract-query";
  */
 function createContractMemory(): Memory | undefined {
   // Use POSTGRES_PRISMA_URL which includes proper SSL config for serverless
-  let connectionString = process.env.POSTGRES_PRISMA_URL || process.env.POSTGRES_URL;
+  let connectionString =
+    process.env.POSTGRES_PRISMA_URL || process.env.POSTGRES_URL;
 
   if (!connectionString) {
     console.warn(
       "POSTGRES_PRISMA_URL/POSTGRES_URL not set - Memory features disabled. " +
-        "Set a PostgreSQL connection string to enable conversation persistence, semantic recall, and working memory."
+        "Set a PostgreSQL connection string to enable conversation persistence, semantic recall, and working memory.",
     );
     return undefined;
   }
@@ -42,7 +43,10 @@ function createContractMemory(): Memory | undefined {
 
   // Force sslmode=no-verify - Supabase pooler's cert chain triggers
   // "self-signed certificate in certificate chain" error with other modes
-  connectionString = connectionString.replace(/sslmode=[^&]+/, "sslmode=no-verify");
+  connectionString = connectionString.replace(
+    /sslmode=[^&]+/,
+    "sslmode=no-verify",
+  );
   if (!connectionString.includes("sslmode=")) {
     const separator = connectionString.includes("?") ? "&" : "?";
     connectionString = `${connectionString}${separator}sslmode=no-verify`;
@@ -52,7 +56,10 @@ function createContractMemory(): Memory | undefined {
 
   // Add pgbouncer=true for Supabase connection pooler compatibility
   // This disables prepared statements which aren't supported by PgBouncer
-  if (!connectionString.includes("pgbouncer=") && process.env.NODE_ENV !== "development") {
+  if (
+    !connectionString.includes("pgbouncer=") &&
+    process.env.NODE_ENV !== "development"
+  ) {
     params.push("pgbouncer=true");
   }
 
@@ -63,7 +70,9 @@ function createContractMemory(): Memory | undefined {
 
   // Log connection setup (without exposing credentials)
   const urlObj = new URL(connectionString);
-  console.log(`[MastraMemory] Connecting to ${urlObj.host}${urlObj.pathname} with params: ${urlObj.searchParams.toString()}`);
+  console.log(
+    `[MastraMemory] Connecting to ${urlObj.host}${urlObj.pathname} with params: ${urlObj.searchParams.toString()}`,
+  );
 
   // PostgresStore extends MastraCompositeStore which implements MastraStorage at runtime
   // but TypeScript types don't reflect this, so we cast it
@@ -133,11 +142,23 @@ const CONTRACT_AGENT_INSTRUCTIONS = `You are a knowledgeable assistant helping U
 - Provide accurate, helpful information based on the actual contract text
 - Help workers understand their rights and protections under the collective bargaining agreement
 
+## CRITICAL: User Context Header
+You will receive a USER CONTEXT system message with the user's position and applicable contracts.
+You MUST start EVERY response with this context formatted as a header block:
+
+**Position:** [their position]
+**Local:** [their local union]
+**Applicable Contracts:** [contract chain]
+
+---
+
+Include this header EXACTLY as provided at the start of every response, followed by a horizontal rule, then your answer.
+
 ## CRITICAL: Response Format
 - DO NOT output your thinking process, planning, or search narration
 - DO NOT say things like "Let me search..." or "I'll look for..." or "Based on what I found..."
 - ONLY output the final answer directly to the user
-- Start your response with the actual answer content, not with meta-commentary about what you're doing
+- After the context header, provide the actual answer content without meta-commentary
 
 ## Using the Contract Query Tool
 When answering questions:
@@ -177,7 +198,13 @@ End EVERY response with this disclaimer on its own line:
 *This information is for educational purposes only and does not constitute legal advice. For specific situations, consult your union steward or business agent.*
 
 ## Example Response
-"Under the Master Agreement, overtime pay is calculated at time-and-a-half for hours worked over 8 in a day or 40 in a week [Doc: master, Art: 12, Sec: 1, Page: 67]. Your Western Region Supplement provides additional protections, requiring overtime for any work on the sixth consecutive day [Doc: western, Art: 8, Page: 34].
+"**Position:** Package Car Driver (RPCD)
+**Local:** Teamsters Local 63
+**Applicable Contracts:** Master Agreement → Western Supplement → NorCal Rider
+
+---
+
+Under the Master Agreement, overtime pay is calculated at time-and-a-half for hours worked over 8 in a day or 40 in a week [Doc: master, Art: 12, Sec: 1, Page: 67]. Your Western Region Supplement provides additional protections, requiring overtime for any work on the sixth consecutive day [Doc: western, Art: 8, Page: 34].
 
 ---
 *This information is for educational purposes only and does not constitute legal advice. For specific situations, consult your union steward or business agent.*"

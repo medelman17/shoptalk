@@ -18,7 +18,7 @@ import type { UIMessage } from "ai";
 import { NextResponse } from "next/server";
 import { getClerkUserId } from "@/lib/auth";
 import { getUserProfile, isOnboardingComplete } from "@/lib/db/user-profile";
-import { getDocumentScope } from "@/lib/union";
+import { buildContextHeader, getDocumentScope } from "@/lib/union";
 import { mastra } from "@/mastra";
 
 /**
@@ -57,7 +57,9 @@ export async function POST(req: Request) {
     const { messages, conversationId } = body;
 
     if (!messages || !Array.isArray(messages)) {
-      return new Response("Invalid request: messages required", { status: 400 });
+      return new Response("Invalid request: messages required", {
+        status: 400,
+      });
     }
 
     // 4. Determine document scope based on user's Local
@@ -69,18 +71,48 @@ export async function POST(req: Request) {
       ? getDocumentScope(localNumber)
       : ["master"]; // Fallback to master only
 
-    // 5. Build request context for the contract query tool
-    const requestContext = new RequestContext<{ documentIds: string[] }>([
+    // 5. Build user context header for AI responses
+    const userContextHeader = buildContextHeader(
+      localNumber,
+      profile.classification,
+    );
+
+    // 6. Build request context for the contract query tool
+    const requestContext = new RequestContext<{
+      documentIds: string[];
+      userContextHeader: string;
+    }>([
       ["documentIds", documentIds],
+      ["userContextHeader", userContextHeader],
     ]);
 
-    // 6. Stream the response using Mastra's AI SDK integration
+    // 7. Prepend user context as a system message
+    // This tells the agent the user's position and applicable contracts
+    const userContextSystemMessage: UIMessage = {
+      id: "user-context-system",
+      role: "system" as const,
+      parts: [
+        {
+          type: "text" as const,
+          text: `USER CONTEXT (include at the start of EVERY response):
+${userContextHeader}
+
+---`,
+        },
+      ],
+    };
+    const messagesWithContext: UIMessage[] = [
+      userContextSystemMessage,
+      ...messages,
+    ];
+
+    // 8. Stream the response using Mastra's AI SDK integration
     // Memory params enable automatic message persistence when DATABASE_URL is set
     const stream = await handleChatStream({
       mastra,
       agentId: "contract-agent",
       params: {
-        messages,
+        messages: messagesWithContext,
         requestContext: requestContext as RequestContext,
         // Memory configuration for automatic persistence
         // thread = conversation ID, resource = user ID
@@ -97,7 +129,7 @@ export async function POST(req: Request) {
       sendSources: false, // We handle citations in the message text
     });
 
-    // 7. Return streaming response
+    // 9. Return streaming response
     return createUIMessageStreamResponse({ stream });
   } catch (error) {
     console.error("Chat API error:", error);
@@ -135,7 +167,7 @@ export async function GET(req: Request) {
     if (!profile || !isOnboardingComplete(profile)) {
       return NextResponse.json(
         { error: "Onboarding required" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -146,7 +178,7 @@ export async function GET(req: Request) {
     if (!conversationId) {
       return NextResponse.json(
         { error: "conversationId is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -182,7 +214,7 @@ export async function GET(req: Request) {
     console.error("GET /api/chat error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

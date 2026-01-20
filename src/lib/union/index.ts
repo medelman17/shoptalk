@@ -83,3 +83,10 @@ export {
   type OnboardingActionInput,
   type SettingsFormData,
 } from "./validation";
+
+// User Context (for AI responses)
+export {
+  buildUserContext,
+  buildContextHeader,
+  type UserContext,
+} from "./user-context";
