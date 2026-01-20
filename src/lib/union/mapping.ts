@@ -25,37 +25,145 @@ const LOCAL_SUPPLEMENT_MAP: Record<number, SupplementChain> = {
   // ═══════════════════════════════════════════════════════════════════════════
 
   // Northern California Rider
-  63: { region: "western", supplements: ["western"], riders: ["northern-california"] },
-  70: { region: "western", supplements: ["western"], riders: ["northern-california"] },
-  150: { region: "western", supplements: ["western"], riders: ["northern-california"] },
-  287: { region: "western", supplements: ["western"], riders: ["northern-california"] },
-  315: { region: "western", supplements: ["western"], riders: ["northern-california"] },
-  350: { region: "western", supplements: ["western"], riders: ["northern-california"] },
-  386: { region: "western", supplements: ["western"], riders: ["northern-california"] },
-  492: { region: "western", supplements: ["western"], riders: ["northern-california"] },
-  601: { region: "western", supplements: ["western"], riders: ["northern-california"] },
-  853: { region: "western", supplements: ["western"], riders: ["northern-california"] },
-  856: { region: "western", supplements: ["western"], riders: ["northern-california"] },
-  890: { region: "western", supplements: ["western"], riders: ["northern-california"] },
-  912: { region: "western", supplements: ["western"], riders: ["northern-california"] },
+  63: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["northern-california"],
+  },
+  70: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["northern-california"],
+  },
+  150: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["northern-california"],
+  },
+  287: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["northern-california"],
+  },
+  315: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["northern-california"],
+  },
+  350: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["northern-california"],
+  },
+  386: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["northern-california"],
+  },
+  492: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["northern-california"],
+  },
+  601: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["northern-california"],
+  },
+  853: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["northern-california"],
+  },
+  856: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["northern-california"],
+  },
+  890: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["northern-california"],
+  },
+  912: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["northern-california"],
+  },
 
   // Southern California Rider
-  166: { region: "western", supplements: ["western"], riders: ["southern-california"] },
-  396: { region: "western", supplements: ["western"], riders: ["southwest-package"] },
-  399: { region: "western", supplements: ["western"], riders: ["southern-california"] },
-  481: { region: "western", supplements: ["western"], riders: ["southern-california"] },
-  542: { region: "western", supplements: ["western"], riders: ["southwest-package"] },
-  572: { region: "western", supplements: ["western"], riders: ["southern-california"] },
-  630: { region: "western", supplements: ["western"], riders: ["southern-california"] },
-  848: { region: "western", supplements: ["western"], riders: ["southern-california"] },
-  986: { region: "western", supplements: ["western"], riders: ["southern-california"] },
+  166: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["southern-california"],
+  },
+  396: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["southwest-package"],
+  },
+  399: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["southern-california"],
+  },
+  481: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["southern-california"],
+  },
+  542: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["southwest-package"],
+  },
+  572: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["southern-california"],
+  },
+  630: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["southern-california"],
+  },
+  848: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["southern-california"],
+  },
+  986: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["southern-california"],
+  },
 
   // Southwest Package Rider (AZ, NV, etc.)
-  14: { region: "western", supplements: ["western"], riders: ["southwest-package"] },
-  104: { region: "western", supplements: ["western"], riders: ["southwest-package"] },
-  274: { region: "western", supplements: ["western"], riders: ["southwest-package"] },
-  533: { region: "western", supplements: ["western"], riders: ["southwest-package"] },
-  631: { region: "western", supplements: ["western"], riders: ["southwest-package"] },
+  14: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["southwest-package"],
+  },
+  104: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["southwest-package"],
+  },
+  274: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["southwest-package"],
+  },
+  533: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["southwest-package"],
+  },
+  631: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["southwest-package"],
+  },
 
   // ═══════════════════════════════════════════════════════════════════════════
   // EASTERN REGION WITH RIDERS
@@ -106,19 +214,71 @@ const LOCAL_SUPPLEMENT_MAP: Record<number, SupplementChain> = {
   957: { region: "central", supplements: ["central"], riders: ["ohio-valley"] },
 
   // Michigan-Indiana Rider
-  135: { region: "central", supplements: ["central"], riders: ["michigan-indiana"] },
-  142: { region: "central", supplements: ["central"], riders: ["michigan-indiana"] },
-  215: { region: "central", supplements: ["central"], riders: ["michigan-indiana"] },
-  243: { region: "central", supplements: ["central"], riders: ["michigan-indiana"] },
-  247: { region: "central", supplements: ["central"], riders: ["michigan-indiana"] },
-  283: { region: "central", supplements: ["central"], riders: ["michigan-indiana"] },
-  299: { region: "central", supplements: ["central"], riders: ["michigan-indiana"] },
-  332: { region: "central", supplements: ["central"], riders: ["michigan-indiana"] },
-  337: { region: "central", supplements: ["central"], riders: ["michigan-indiana"] },
-  339: { region: "central", supplements: ["central"], riders: ["michigan-indiana"] },
-  364: { region: "central", supplements: ["central"], riders: ["michigan-indiana"] },
-  406: { region: "central", supplements: ["central"], riders: ["michigan-indiana"] },
-  414: { region: "central", supplements: ["central"], riders: ["michigan-indiana"] },
+  135: {
+    region: "central",
+    supplements: ["central"],
+    riders: ["michigan-indiana"],
+  },
+  142: {
+    region: "central",
+    supplements: ["central"],
+    riders: ["michigan-indiana"],
+  },
+  215: {
+    region: "central",
+    supplements: ["central"],
+    riders: ["michigan-indiana"],
+  },
+  243: {
+    region: "central",
+    supplements: ["central"],
+    riders: ["michigan-indiana"],
+  },
+  247: {
+    region: "central",
+    supplements: ["central"],
+    riders: ["michigan-indiana"],
+  },
+  283: {
+    region: "central",
+    supplements: ["central"],
+    riders: ["michigan-indiana"],
+  },
+  299: {
+    region: "central",
+    supplements: ["central"],
+    riders: ["michigan-indiana"],
+  },
+  332: {
+    region: "central",
+    supplements: ["central"],
+    riders: ["michigan-indiana"],
+  },
+  337: {
+    region: "central",
+    supplements: ["central"],
+    riders: ["michigan-indiana"],
+  },
+  339: {
+    region: "central",
+    supplements: ["central"],
+    riders: ["michigan-indiana"],
+  },
+  364: {
+    region: "central",
+    supplements: ["central"],
+    riders: ["michigan-indiana"],
+  },
+  406: {
+    region: "central",
+    supplements: ["central"],
+    riders: ["michigan-indiana"],
+  },
+  414: {
+    region: "central",
+    supplements: ["central"],
+    riders: ["michigan-indiana"],
+  },
 
   // ═══════════════════════════════════════════════════════════════════════════
   // SOUTHERN REGION WITH RIDERS
@@ -132,6 +292,17 @@ const LOCAL_SUPPLEMENT_MAP: Record<number, SupplementChain> = {
   745: { region: "southern", supplements: ["southern"], riders: ["texas"] },
   767: { region: "southern", supplements: ["southern"], riders: ["texas"] },
   988: { region: "southern", supplements: ["southern"], riders: ["texas"] },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ATLANTIC REGION WITH RIDERS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Local 177 Riders (New Jersey)
+  177: {
+    region: "atlantic",
+    supplements: ["atlantic"],
+    riders: ["local-177-drivers", "local-177-mechanics"],
+  },
 };
 
 /**
@@ -151,7 +322,9 @@ const DEFAULT_REGION_CHAINS: Record<Region, SupplementChain> = {
  * @param localNumber - The Local union number
  * @returns The supplement chain, or a default based on region
  */
-export function getSupplementChain(localNumber: number): SupplementChain | null {
+export function getSupplementChain(
+  localNumber: number,
+): SupplementChain | null {
   // First check explicit mapping
   const explicit = LOCAL_SUPPLEMENT_MAP[localNumber];
   if (explicit) {
@@ -189,17 +362,25 @@ export function getDocumentScope(localNumber: number): string[] {
  * @param localNumber - The Local union number
  * @returns Object containing all applicable documents with full details
  */
-export function getApplicableDocuments(localNumber: number): ApplicableDocuments {
+export function getApplicableDocuments(
+  localNumber: number,
+): ApplicableDocuments {
   const chain = getSupplementChain(localNumber);
 
-  const supplements = chain?.supplements.map((id) => getDocument(id)).filter(Boolean) ?? [];
-  const riders = chain?.riders.map((id) => getDocument(id)).filter(Boolean) ?? [];
+  const supplements =
+    chain?.supplements.map((id) => getDocument(id)).filter(Boolean) ?? [];
+  const riders =
+    chain?.riders.map((id) => getDocument(id)).filter(Boolean) ?? [];
 
   return {
     master: MASTER_AGREEMENT,
     supplements: supplements as ApplicableDocuments["supplements"],
     riders: riders as ApplicableDocuments["riders"],
-    all: [MASTER_AGREEMENT, ...supplements, ...riders] as ApplicableDocuments["all"],
+    all: [
+      MASTER_AGREEMENT,
+      ...supplements,
+      ...riders,
+    ] as ApplicableDocuments["all"],
   };
 }
 
