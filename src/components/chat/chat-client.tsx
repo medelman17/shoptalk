@@ -11,10 +11,7 @@ import {
   PromptInputFooter,
   PromptInputSubmit,
 } from "@/components/ai-elements/prompt-input";
-import {
-  Message,
-  MessageContent,
-} from "@/components/ai-elements/message";
+import { Message, MessageContent } from "@/components/ai-elements/message";
 import { MessageWithCitations } from "@/components/ai-elements/message-with-citations";
 import { Loader } from "@/components/ai-elements/loader";
 import type { Citation } from "@/lib/citations";
@@ -37,7 +34,9 @@ const USER_CONTEXT_PATTERN = /<user_context>[\s\S]*?<\/user_context>\s*/g;
  */
 function getMessageText(message: UIMessage, stripContext = false): string {
   let text = message.parts
-    .filter((part): part is { type: "text"; text: string } => part.type === "text")
+    .filter(
+      (part): part is { type: "text"; text: string } => part.type === "text",
+    )
     .map((part) => part.text)
     .join("");
 
@@ -45,6 +44,16 @@ function getMessageText(message: UIMessage, stripContext = false): string {
   if (stripContext) {
     text = text.replace(USER_CONTEXT_PATTERN, "").trim();
   }
+
+  // DIAGNOSTIC: Log text extraction
+  console.log("[DIAG:getMessageText]", {
+    role: message.role,
+    partsCount: message.parts.length,
+    textLength: text.length,
+    first100: text.slice(0, 100),
+    last100: text.slice(-100),
+    stripContext,
+  });
 
   return text;
 }
@@ -60,7 +69,9 @@ interface ToolCallInfo {
 
 function getToolCalls(message: UIMessage): ToolCallInfo[] {
   return message.parts
-    .filter((part): part is ToolUIPart | DynamicToolUIPart => isToolUIPart(part))
+    .filter((part): part is ToolUIPart | DynamicToolUIPart =>
+      isToolUIPart(part),
+    )
     .map((part) => ({
       toolName: getToolName(part),
       input: part.input,
@@ -71,7 +82,13 @@ function getToolCalls(message: UIMessage): ToolCallInfo[] {
 /**
  * Progress indicator showing tool calls (persists after completion).
  */
-function ToolCallProgress({ toolCalls, isStreaming }: { toolCalls: ToolCallInfo[]; isStreaming: boolean }) {
+function ToolCallProgress({
+  toolCalls,
+  isStreaming,
+}: {
+  toolCalls: ToolCallInfo[];
+  isStreaming: boolean;
+}) {
   if (toolCalls.length === 0) return null;
 
   return (
@@ -80,11 +97,15 @@ function ToolCallProgress({ toolCalls, isStreaming }: { toolCalls: ToolCallInfo[
         // Extract search query from input if available
         const input = call.input as Record<string, unknown> | undefined;
         const query = input?.query as string | undefined;
-        const isActive = isStreaming && (call.state === "input-streaming" || call.state === "input-available");
+        const isActive =
+          isStreaming &&
+          (call.state === "input-streaming" ||
+            call.state === "input-available");
 
-        const label = call.toolName === "contractQueryTool"
-          ? `Searched: "${query || "contracts"}"`
-          : `Ran: ${call.toolName}`;
+        const label =
+          call.toolName === "contractQueryTool"
+            ? `Searched: "${query || "contracts"}"`
+            : `Ran: ${call.toolName}`;
 
         return (
           <div
@@ -94,11 +115,25 @@ function ToolCallProgress({ toolCalls, isStreaming }: { toolCalls: ToolCallInfo[
             {isActive ? (
               <Loader className="size-3" />
             ) : (
-              <svg className="size-3 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              <svg
+                className="size-3 text-green-500"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
               </svg>
             )}
-            <span>{isActive ? label.replace("Searched:", "Searching:").replace("Ran:", "Running:") : label}</span>
+            <span>
+              {isActive
+                ? label
+                    .replace("Searched:", "Searching:")
+                    .replace("Ran:", "Running:")
+                : label}
+            </span>
           </div>
         );
       })}
@@ -138,7 +173,9 @@ export function ChatClient({
   const pendingQuestionRef = useRef<string | null>(null);
 
   // Track current conversation ID (may be set lazily on first message)
-  const [currentConversationId, setCurrentConversationId] = useState<string | undefined>(conversationId);
+  const [currentConversationId, setCurrentConversationId] = useState<
+    string | undefined
+  >(conversationId);
   const conversationIdRef = useRef<string | undefined>(conversationId);
 
   // Keep ref in sync with state
@@ -294,7 +331,7 @@ export function ChatClient({
   const title = conversationTitle || "Contract Q&A";
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col" data-diag="chat-client-root">
       {/* Header */}
       <AppHeader title={title} />
 
@@ -302,8 +339,13 @@ export function ChatClient({
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto px-4 py-6"
+        data-diag="scroll-container"
       >
-        <div className="mx-auto max-w-3xl space-y-6">
+        <div
+          className="mx-auto max-w-3xl space-y-6"
+          data-diag="messages-container"
+          data-message-count={messages.length}
+        >
           {/* Welcome message if no conversation yet */}
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -351,9 +393,13 @@ export function ChatClient({
           {messages.map((message: UIMessage, index: number) => {
             const isLastMessage = index === messages.length - 1;
             const isStreaming = status === "streaming" && isLastMessage;
-            const toolCalls = message.role === "assistant" ? getToolCalls(message) : [];
+            const toolCalls =
+              message.role === "assistant" ? getToolCalls(message) : [];
             // Strip injected context from user messages (it's for AI, not display)
-            const textContent = getMessageText(message, message.role === "user");
+            const textContent = getMessageText(
+              message,
+              message.role === "user",
+            );
 
             return (
               <Message key={message.id} from={message.role}>
@@ -365,7 +411,10 @@ export function ChatClient({
                     // Assistant messages: show tool calls progress + content
                     <>
                       {/* Show tool calls (persists after completion) */}
-                      <ToolCallProgress toolCalls={toolCalls} isStreaming={isStreaming} />
+                      <ToolCallProgress
+                        toolCalls={toolCalls}
+                        isStreaming={isStreaming}
+                      />
 
                       {/* Show message content (or placeholder if only tool calls so far) */}
                       {textContent ? (
@@ -435,11 +484,16 @@ export function ChatClient({
                 <span className="text-xs text-muted-foreground">
                   Press Enter to send
                 </span>
-                <CharacterCounter current={input.length} max={QUERY_MAX_LENGTH} />
+                <CharacterCounter
+                  current={input.length}
+                  max={QUERY_MAX_LENGTH}
+                />
               </div>
               <PromptInputSubmit
                 status={status}
-                disabled={isLoading || !input.trim() || input.length > QUERY_MAX_LENGTH}
+                disabled={
+                  isLoading || !input.trim() || input.length > QUERY_MAX_LENGTH
+                }
               />
             </PromptInputFooter>
           </PromptInput>

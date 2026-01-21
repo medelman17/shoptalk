@@ -77,7 +77,7 @@ const CONTRACT_NAMES_PATTERN = new RegExp(
     .sort((a, b) => b.length - a.length)
     .map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
     .join("|")})`,
-  "g"
+  "g",
 );
 
 /**
@@ -146,6 +146,20 @@ export const MessageWithCitations = memo(
       [contractTransformed],
     );
 
+    // DIAGNOSTIC: Log transform pipeline
+    console.log("[DIAG:MessageWithCitations]", {
+      contentLength: content.length,
+      showContextHeader,
+      mainContentLength: mainContent.length,
+      mainContentFirst100: mainContent.slice(0, 100),
+      contractTransformedLength: contractTransformed.length,
+      markdownLength: markdown.length,
+      markdownFirst200: markdown.slice(0, 200),
+      markdownLast200: markdown.slice(-200),
+      isStreaming,
+      citationCount: citationMap.size,
+    });
+
     // Custom anchor component to intercept footnote and contract link clicks
     const CustomAnchor = useCallback(
       ({
@@ -208,7 +222,13 @@ export const MessageWithCitations = memo(
     );
 
     return (
-      <div className={className} {...props}>
+      <div
+        className={className}
+        data-diag="message-with-citations-root"
+        data-streaming={isStreaming}
+        data-has-context={showContextHeader}
+        {...props}
+      >
         {/* Render user context header in a styled card */}
         {showContextHeader && (
           <UserContextHeader
@@ -217,7 +237,11 @@ export const MessageWithCitations = memo(
           />
         )}
         {/* Render main content with citations */}
-        <div className="prose prose-sm dark:prose-invert">
+        <div
+          className="prose prose-sm dark:prose-invert"
+          data-diag="prose-container"
+          data-markdown-length={markdown.length}
+        >
           <Streamdown
             mode={isStreaming ? "streaming" : "static"}
             components={{ a: CustomAnchor }}

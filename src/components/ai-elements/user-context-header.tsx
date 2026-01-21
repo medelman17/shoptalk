@@ -48,7 +48,9 @@ interface ParsedContext {
 function parseUserContext(content: string): ParsedContext | null {
   const positionMatch = content.match(/\*\*Position:\*\*\s*([^\n*]+)/);
   const localMatch = content.match(/\*\*Local:\*\*\s*([^\n*]+)/);
-  const contractsMatch = content.match(/\*\*Applicable Contracts:\*\*\s*([^\n]+)/);
+  const contractsMatch = content.match(
+    /\*\*Applicable Contracts:\*\*\s*([^\n]+)/,
+  );
 
   if (!positionMatch && !localMatch && !contractsMatch) {
     return null;
@@ -70,13 +72,24 @@ function parseUserContext(content: string): ParsedContext | null {
  */
 export function stripUserContextHeader(content: string): string {
   // Remove the context header lines and the following ---
-  return content
+  const result = content
     .replace(/\*\*Position:\*\*\s*[^\n]+\n?/g, "")
     .replace(/\*\*Local:\*\*\s*[^\n]+\n?/g, "")
     .replace(/\*\*Applicable Contracts:\*\*\s*[^\n]+\n?/g, "")
     .replace(/^---\s*\n?/, "")
     .replace(/^\n+/, "")
     .trim();
+
+  // DIAGNOSTIC: Log stripping operation
+  console.log("[DIAG:stripUserContextHeader]", {
+    inputLength: content.length,
+    outputLength: result.length,
+    stripped: content.length - result.length,
+    inputFirst100: content.slice(0, 100),
+    outputFirst100: result.slice(0, 100),
+  });
+
+  return result;
 }
 
 interface UserContextHeaderProps {
@@ -87,7 +100,10 @@ interface UserContextHeaderProps {
 /**
  * Renders the user context header in a styled card format.
  */
-export function UserContextHeader({ content, onContractClick }: UserContextHeaderProps) {
+export function UserContextHeader({
+  content,
+  onContractClick,
+}: UserContextHeaderProps) {
   const context = useMemo(() => parseUserContext(content), [content]);
 
   if (!context) {
@@ -113,12 +129,16 @@ export function UserContextHeader({ content, onContractClick }: UserContextHeade
       {context.contracts.length > 0 && (
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
           <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-xs font-medium text-muted-foreground">Contracts:</span>
+          <span className="text-xs font-medium text-muted-foreground">
+            Contracts:
+          </span>
           {context.contracts.map((contract, idx) => {
             const docId = CONTRACT_NAME_TO_ID[contract];
             return (
               <span key={idx} className="flex items-center">
-                {idx > 0 && <span className="mx-1 text-muted-foreground">→</span>}
+                {idx > 0 && (
+                  <span className="mx-1 text-muted-foreground">→</span>
+                )}
                 {docId && onContractClick ? (
                   <button
                     type="button"
