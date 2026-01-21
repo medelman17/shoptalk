@@ -100,7 +100,7 @@ export const DOCUMENT_MANIFEST: RawDocument[] = [
     region: "western",
   },
   {
-    id: "ohio-rider",
+    id: "ohio-valley",
     title: "Ohio Rider",
     shortTitle: "Ohio Rider",
     type: "rider",
@@ -108,7 +108,7 @@ export const DOCUMENT_MANIFEST: RawDocument[] = [
     region: "central",
   },
   {
-    id: "michigan-rider",
+    id: "michigan-indiana",
     title: "Michigan Rider",
     shortTitle: "Michigan Rider",
     type: "rider",
@@ -140,7 +140,7 @@ export const DOCUMENT_MANIFEST: RawDocument[] = [
     region: "atlantic",
   },
   {
-    id: "upstate-west-ny",
+    id: "upstate-ny",
     title: "Upstate and Western New York Supplemental Agreement",
     shortTitle: "Upstate NY Supplement",
     type: "rider",
@@ -217,7 +217,8 @@ export const DOCUMENT_MANIFEST: RawDocument[] = [
   // Joint Council Riders
   {
     id: "jc3-feeder-package-mechanics",
-    title: "Joint Council 3 Feeder, Package, Mechanics and Combination Employees Rider",
+    title:
+      "Joint Council 3 Feeder, Package, Mechanics and Combination Employees Rider",
     shortTitle: "JC3 Rider",
     type: "rider",
     filePath: "data/contracts/jc3-feeder-package-mechanics.pdf",

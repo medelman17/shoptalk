@@ -155,6 +155,128 @@ export const RIDERS: Record<string, Supplement> = {
     type: "rider",
     description: "Additional provisions for Local 177 mechanics (New Jersey)",
   },
+
+  // Atlantic region riders
+  "central-pa": {
+    id: "central-pa",
+    name: "Central Pennsylvania Supplemental Agreement",
+    shortName: "Central PA",
+    type: "rider",
+    description: "Additional provisions for Central Pennsylvania locals",
+  },
+  "western-pa": {
+    id: "western-pa",
+    name: "Western Pennsylvania Supplemental Agreement",
+    shortName: "Western PA",
+    type: "rider",
+    description: "Additional provisions for Western Pennsylvania locals",
+  },
+  "metro-philadelphia": {
+    id: "metro-philadelphia",
+    name: "Metro Philadelphia Supplemental Agreement",
+    shortName: "Metro Philly",
+    type: "rider",
+    description: "Additional provisions for Metro Philadelphia locals",
+  },
+  "local-623": {
+    id: "local-623",
+    name: "Local 623 Supplemental Agreement",
+    shortName: "Local 623",
+    type: "rider",
+    description: "Additional provisions for Local 623 (Philadelphia)",
+  },
+
+  // Central region riders
+  "local-243": {
+    id: "local-243",
+    name: "Local 243 Metro Detroit Supplemental Agreement",
+    shortName: "Local 243 Detroit",
+    type: "rider",
+    description: "Additional provisions for Local 243 (Detroit)",
+  },
+  "local-135": {
+    id: "local-135",
+    name: "Local 135 Rider",
+    shortName: "Local 135",
+    type: "rider",
+    description: "Additional provisions for Local 135 (Indianapolis)",
+  },
+
+  // Southern region riders
+  "local-89-louisville-air": {
+    id: "local-89-louisville-air",
+    name: "Local 89 Louisville Air Rider",
+    shortName: "Local 89 Air",
+    type: "rider",
+    description: "Additional provisions for Local 89 Louisville Air operations",
+  },
+  "local-769-latin-america": {
+    id: "local-769-latin-america",
+    name: "Local 769 Latin America Inc Rider",
+    shortName: "Local 769 Latin America",
+    type: "rider",
+    description: "Additional provisions for Local 769 Latin America operations",
+  },
+
+  // Western region riders
+  "local-959-alaska": {
+    id: "local-959-alaska",
+    name: "Local 959 Alaska Full-Time and Part-Time Riders",
+    shortName: "Local 959 Alaska",
+    type: "rider",
+    description: "Additional provisions for Local 959 (Alaska)",
+  },
+  "local-996-hawaii": {
+    id: "local-996-hawaii",
+    name: "Local 996 Hawaii Supplemental Agreement",
+    shortName: "Local 996 Hawaii",
+    type: "rider",
+    description: "Additional provisions for Local 996 (Hawaii)",
+  },
+  "jc3-feeder-package-mechanics": {
+    id: "jc3-feeder-package-mechanics",
+    name: "Joint Council 3 Feeder, Package, Mechanics Rider",
+    shortName: "JC3 Rider",
+    type: "rider",
+    description: "Joint Council 3 provisions for OR/WA area",
+  },
+  "jc28-sort-rider": {
+    id: "jc28-sort-rider",
+    name: "Joint Council 28 Rider and Sort Addendum",
+    shortName: "JC28 Rider",
+    type: "rider",
+    description: "Joint Council 28 provisions for WA area",
+  },
+  "jc37-package-sort": {
+    id: "jc37-package-sort",
+    name: "Joint Council 37 Package and Sort Riders",
+    shortName: "JC37 Rider",
+    type: "rider",
+    description: "Joint Council 37 provisions for CA area",
+  },
+  "southwest-automotive": {
+    id: "southwest-automotive",
+    name: "Southwest Automotive and Utility Addendum",
+    shortName: "SW Automotive",
+    type: "rider",
+    description: "Southwest automotive and utility provisions",
+  },
+
+  // Specialty agreements
+  "cartage-services": {
+    id: "cartage-services",
+    name: "Cartage Services Inc Supplemental Agreement",
+    shortName: "Cartage Services",
+    type: "rider",
+    description: "Provisions for Cartage Services Inc employees",
+  },
+  "trailer-conditioners": {
+    id: "trailer-conditioners",
+    name: "Trailer Conditioners Inc Supplemental Agreement",
+    shortName: "Trailer Conditioners",
+    type: "rider",
+    description: "Provisions for Trailer Conditioners Inc employees",
+  },
 };
 
 /**
