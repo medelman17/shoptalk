@@ -217,7 +217,7 @@ const LOCAL_SUPPLEMENT_MAP: Record<number, SupplementChain> = {
   135: {
     region: "central",
     supplements: ["central"],
-    riders: ["michigan-indiana"],
+    riders: ["michigan-indiana", "local-135"],
   },
   142: {
     region: "central",
@@ -232,7 +232,7 @@ const LOCAL_SUPPLEMENT_MAP: Record<number, SupplementChain> = {
   243: {
     region: "central",
     supplements: ["central"],
-    riders: ["michigan-indiana"],
+    riders: ["michigan-indiana", "local-243"],
   },
   247: {
     region: "central",
@@ -302,6 +302,96 @@ const LOCAL_SUPPLEMENT_MAP: Record<number, SupplementChain> = {
     region: "atlantic",
     supplements: ["atlantic"],
     riders: ["local-177-drivers", "local-177-mechanics"],
+  },
+
+  // Central PA Locals
+  229: {
+    region: "atlantic",
+    supplements: ["atlantic"],
+    riders: ["central-pa"],
+  },
+  401: {
+    region: "atlantic",
+    supplements: ["atlantic"],
+    riders: ["central-pa"],
+  },
+  764: {
+    region: "atlantic",
+    supplements: ["atlantic"],
+    riders: ["central-pa"],
+  },
+
+  // Western PA Locals
+  169: {
+    region: "atlantic",
+    supplements: ["atlantic"],
+    riders: ["western-pa"],
+  },
+  249: {
+    region: "atlantic",
+    supplements: ["atlantic"],
+    riders: ["western-pa"],
+  },
+  430: {
+    region: "atlantic",
+    supplements: ["atlantic"],
+    riders: ["western-pa"],
+  },
+  771: {
+    region: "atlantic",
+    supplements: ["atlantic"],
+    riders: ["western-pa"],
+  },
+
+  // Metro Philadelphia Locals
+  107: {
+    region: "atlantic",
+    supplements: ["atlantic"],
+    riders: ["metro-philadelphia"],
+  },
+  115: {
+    region: "atlantic",
+    supplements: ["atlantic"],
+    riders: ["metro-philadelphia"],
+  },
+
+  // Local 623 (Philadelphia)
+  623: { region: "atlantic", supplements: ["atlantic"], riders: ["local-623"] },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SOUTHERN REGION ADDITIONAL RIDERS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Local 89 Louisville Air
+  89: {
+    region: "southern",
+    supplements: ["southern"],
+    riders: ["local-89-louisville-air"],
+  },
+
+  // Local 769 Latin America (Miami)
+  769: {
+    region: "southern",
+    supplements: ["southern"],
+    riders: ["local-769-latin-america"],
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // WESTERN REGION ADDITIONAL RIDERS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Local 959 Alaska
+  959: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["local-959-alaska"],
+  },
+
+  // Local 996 Hawaii
+  996: {
+    region: "western",
+    supplements: ["western"],
+    riders: ["local-996-hawaii"],
   },
 };
 

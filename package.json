@@ -17,7 +17,8 @@
     "mastra:dev": "mastra dev",
     "dev:all": "npm-run-all --parallel dev mastra:dev",
     "eval:fetch": "tsx scripts/fetch-reddit-eval.ts",
-    "eval:stats": "tsx scripts/fetch-reddit-eval.ts --stats"
+    "eval:stats": "tsx scripts/fetch-reddit-eval.ts --stats",
+    "validate:mappings": "tsx scripts/validate-mappings.ts"
   },
   "dependencies": {
     "@ai-sdk/react": "^3.0.43",
